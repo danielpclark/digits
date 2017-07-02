@@ -1,0 +1,18 @@
+[package]
+name = "digits"
+version = "0.0.1"
+authors = ["Daniel P. Clark <6ftdan@gmail.com>"]
+description = "Custom “numeric” incrementor without u64 MAX limit in size. Like a score flipper for a custom character set."
+documentation = "http://danielpclark.github.io/digits/index.html"
+homepage = "https://github.com/danielpclark/digits"
+repository = "https://github.com/danielpclark/digits"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["numeric","base","conversion","decimal"]
+categories = ["cryptography", "data-structures"]
+
+[badges]
+travis-ci = { repository = "danielpclark/digits", branch = "master" }
+
+[dependencies]
+base_custom = "^0.1"
