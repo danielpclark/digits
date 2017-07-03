@@ -5,13 +5,25 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 //
-// #![deny(missing_docs,trivial_casts,trivial_numeric_casts,
-//         missing_debug_implementations, missing_copy_implementations,
-//         unsafe_code,unstable_features,unused_import_braces,unused_qualifications)
-// ]
+#![deny(missing_docs,trivial_casts,trivial_numeric_casts,
+        missing_debug_implementations, missing_copy_implementations,
+        unsafe_code,unstable_features,unused_import_braces,unused_qualifications)
+]
+//! # digits
+//!
+//! The digits crate is a linked list implementation of a score card flipper.  But
+//! in this case it's with any characters you want and you can enumerate through
+//! possibilities beyond the numeric limits intrinsic in basic numerc types like `u64`.
+//!
+//! Primary use case would be brute forcing character sequences.
 extern crate base_custom;
 use base_custom::BaseCustom;
 
+/// # struct Digits
+///
+/// This struct acts similar to a full number with a custom numeric character base.
+/// But the underlying implementation is a linked list where all the methods recurse
+/// as far as need to to implement the operations.
 #[derive(Debug,Clone)]
 pub struct Digits<'a> {
   mapping: &'a BaseCustom<char>,
@@ -20,6 +32,12 @@ pub struct Digits<'a> {
 }
 
 impl<'a> Digits<'a> {
+  /// `new` creates a new Digits instance with the provided character set and value.
+  ///
+  /// The first parameter must be a BaseCustom object which defines and maps all values.
+  /// The second parameter is a string value with all valid characters from the BaseCustom set.
+  ///
+  /// You can view the numbers current value at any time with `to_s()` or `to_string()`.
   pub fn new<S>(mapping: &'a BaseCustom<char>, number: S) -> Digits<'a>
   where S: Into<String> {
     let number = number.into();
@@ -39,6 +57,7 @@ impl<'a> Digits<'a> {
     }
   }
 
+  /// Gives the full value of all digits within the linked list as a String.
   pub fn to_s(&self) -> String {
     let num = self.mapping.gen(self.digit);
     match &self.left {
@@ -47,6 +66,7 @@ impl<'a> Digits<'a> {
     }
   }
 
+  /// Gives the full value of all digits within the linked list as a String.
   pub fn to_string(&self) -> String {
     self.to_s()
   }
@@ -66,6 +86,7 @@ impl<'a> Digits<'a> {
     }
   }
 
+  /// `zero` returns a Digits instance with value of zero and the current character mapping.
   pub fn zero(&self) -> Self {
     Digits { mapping: self.mapping, digit: 0, left: None }
   }
@@ -74,6 +95,10 @@ impl<'a> Digits<'a> {
     self.digit == 0 && match self.left { None => true, _ => false }
   }
 
+  /// Add two Digits instances together.  The one the `add` method is called on
+  /// must be mutable and modifies itself.  The other is consumed.
+  ///
+  /// Returns a clone of the updated `Self` as well.
   pub fn add(&mut self, other: Self) -> Self {
     if other.is_end() { return self.clone(); };
     let (last, rest) = Digits::last_rest(other.to_s());
@@ -97,7 +122,9 @@ impl<'a> Digits<'a> {
   }
 }
 
+/// NODOC
 pub trait Into<String> {
+  /// NODOC
   fn into(self) -> String;
 }
 
