@@ -18,13 +18,14 @@
 //! Primary use case would be brute forcing character sequences.
 extern crate base_custom;
 use base_custom::BaseCustom;
+use std::fmt;
 
 /// # struct Digits
 ///
 /// This struct acts similar to a full number with a custom numeric character base.
 /// But the underlying implementation is a linked list where all the methods recurse
 /// as far as need to to implement the operations.
-#[derive(Debug,Clone)]
+#[derive(Clone)]
 pub struct Digits<'a> {
   mapping: &'a BaseCustom<char>,
   digit: u64,
@@ -71,6 +72,8 @@ impl<'a> Digits<'a> {
     self.to_s()
   }
 
+  // TODO: Refactor out instances of Digits calling to_s to be handed to this method.
+  //   Those can simple hand out the current value and the left linked list as a to_s.
   fn last_rest(s: String) -> (char, String) {
     let mut n = s.chars().rev();
     let last = n.next().unwrap();
@@ -86,9 +89,22 @@ impl<'a> Digits<'a> {
     }
   }
 
+  /// `length` returns a `usize` of the total linked list length.
+  pub fn length(&self) -> usize {
+    match &self.left {
+      &None => 1,
+      &Some(ref l) => { l.length() + 1 }
+    }
+  }
+
   /// `zero` returns a Digits instance with value of zero and the current character mapping.
   pub fn zero(&self) -> Self {
     Digits { mapping: self.mapping, digit: 0, left: None }
+  }
+
+  /// `one` returns a Digits instance with value of one and the current character mapping.
+  pub fn one(&self) -> Self {
+    Digits { mapping: self.mapping, digit: 1, left: None }
   }
 
   fn is_end(&self) -> bool {
@@ -100,6 +116,7 @@ impl<'a> Digits<'a> {
   ///
   /// Returns a clone of the updated `Self` as well.
   pub fn add(&mut self, other: Self) -> Self {
+    assert!(self.mapping == other.mapping);
     if other.is_end() { return self.clone(); };
     let (last, rest) = Digits::last_rest(other.to_s());
 
@@ -118,6 +135,48 @@ impl<'a> Digits<'a> {
     }.as_ref().clone();
 
     self.set_left( intermediate.add(current_left).clone() );
+    self.clone()
+  }
+
+  /// Multiplies two Digits instances together.  The one the `mul` method is called on
+  /// must be mutable and modifies itself.  The other is consumed.
+  ///
+  /// Returns a clone of the updated `Self` as well.
+  // TODO: Figure out multiply by zero scenario
+  pub fn mul(&mut self, other: Self) -> Self {
+    assert!(self.mapping == other.mapping);
+    let o = other.to_s();
+    let mut iter = o.chars().rev().enumerate();
+    let mut add_after: Vec<Digits> = vec![];
+    loop {
+      match iter.next() {
+        None => break,
+        Some((index, digit_symbol)) => {
+          let value = self.mapping.decimal(digit_symbol.to_string()) * self.digit;
+          let (val, mut rest) = Digits::last_rest(self.mapping.gen(value));
+          self.digit = self.mapping.decimal(val.to_string());
+
+          match self.left.clone() {
+            None => (),
+            Some(ref bx) => {
+              self.set_left(bx.clone().mul(Digits::new(self.mapping, rest.clone())));
+            },
+          };
+
+          // CARRY-OVER-VALUES * BASE^(INDEX+1)
+          for _ in 0..index+1 {
+            rest = format!("{}{}", rest, self.mapping.gen(0));
+          }
+          // ADD AFTER “ALL” MULTIPLICATION
+          add_after.push(Digits::new(self.mapping, rest));
+        },
+      }
+    }
+    let iter = add_after.iter();
+    for addable in iter {
+      println!("ADDABLE: {}", addable);
+      self.add(addable.clone());
+    }
     self.clone()
   }
 }
@@ -146,3 +205,21 @@ impl Into<String> for String {
   }
 }
 
+impl<'a> fmt::Display for Digits<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+   write!(f, "Digits<'a> — (Character: '{}', Decimal Value: {}{})",
+     self.mapping.gen(self.digit), self.digit, {
+       match self.left {
+         None => "".to_string(),
+         Some(ref l) => format!(", With Preceeding: '{}'", l.to_s()),
+       }
+     }
+     )
+  }
+}
+
+impl<'a> fmt::Debug for Digits<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{} with base: {:?}", self, self.mapping)
+  }
+}

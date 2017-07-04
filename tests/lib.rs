@@ -21,6 +21,13 @@ fn it_can_add() {
 }
 
 #[test]
+fn it_can_give_length() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let num1 = Digits::new(&base10, "1111111".to_string());
+  assert_eq!(num1.length(), 7);
+}
+
+#[test]
 fn it_can_add_with_carry_over() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let num13 = Digits::new(&base10, "13".to_string());
@@ -42,4 +49,14 @@ fn it_can_go_beyond_u64_max() {
   let num_u64_max = Digits::new(&base10, "18446744073709551615".to_string());
   let one = Digits::new(&base10, "1".to_string());
   assert_eq!(num_u64_max.clone().add(one).to_s(), "18446744073709551616");
+}
+
+#[test]
+fn it_can_multiply_one() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let one = Digits::new(&base10, "1".to_string());
+  assert_eq!(one.clone().mul(one).to_s(), "1");
+  let eleven = Digits::new(&base10, "11".to_string());
+  let one = Digits::new(&base10, "1".to_string());
+  assert_eq!(one.clone().mul(eleven).to_s(), "11");
 }
