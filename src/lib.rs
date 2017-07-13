@@ -85,6 +85,7 @@ impl<'a> Digits<'a> {
     self.to_s()
   }
 
+  // the way to recurse and process Digits
   fn head_tail(self) -> (u64, Option<Box<Self>>) {
     match self.left {
       Some(bx) => (self.digit, Some(bx)),
@@ -92,6 +93,7 @@ impl<'a> Digits<'a> {
     }
   }
 
+  // logic for setting left linked list continuation
   fn set_left(&mut self, d: Digits<'a>) {
     if d.is_end() {
       self.left = None;
@@ -110,7 +112,7 @@ impl<'a> Digits<'a> {
 
   /// `zero` returns a Digits instance with value of zero and the current character mapping.
   pub fn zero(&self) -> Self {
-    Digits { mapping: self.mapping, digit: 0, left: None }
+    Digits::new_zero(self.mapping)
   }
 
   /// `new_zero` returns a Digits instance with value of zero and the current character mapping.
@@ -137,7 +139,7 @@ impl<'a> Digits<'a> {
 
   /// `one` returns a Digits instance with value of one and the current character mapping.
   pub fn one(&self) -> Self {
-    Digits { mapping: self.mapping, digit: 1, left: None }
+    Digits::new_one(self.mapping)
   }
 
   /// `new_one` returns a Digits instance with value of one and the current character mapping.
@@ -145,6 +147,8 @@ impl<'a> Digits<'a> {
     Digits { mapping: mapping, digit: 1, left: None }
   }
 
+  // A non-consuming quick end check.
+  // More efficient than calling `is_zero` when this applies.
   fn is_end(&self) -> bool {
     self.digit == 0 && match self.left { None => true, _ => false }
   }
