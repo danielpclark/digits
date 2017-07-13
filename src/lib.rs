@@ -43,7 +43,11 @@ impl<'a> Digits<'a> {
   where S: Into<String> {
     let number = number.into();
     if number.is_empty() { return Digits { mapping: mapping, digit: 0, left: None }; };
-    let (last, rest) = Digits::last_rest(number);
+    let (last, rest) = {
+      let mut n = number.chars().rev();
+      (n.next().unwrap(), n.rev().collect::<String>())
+    };
+
     let continuation = {
       if rest.is_empty() {
         None
@@ -56,6 +60,15 @@ impl<'a> Digits<'a> {
       digit: mapping.decimal(last.to_string()),
       left: continuation,
     }
+  }
+
+  /// `replicate` — alias for clone (useful for unboxing)
+  pub fn replicate(self) -> Self { self.clone() }
+
+  /// `propagate` creates a new number from the same underlying numeric base
+  pub fn propagate<S>(&self, number: S) -> Self
+  where S: Into<String> {
+    Digits::new(self.mapping, number)
   }
 
   /// Gives the full value of all digits within the linked list as a String.
@@ -72,13 +85,11 @@ impl<'a> Digits<'a> {
     self.to_s()
   }
 
-  // TODO: Refactor out instances of Digits calling to_s to be handed to this method.
-  //   Those can simple hand out the current value and the left linked list as a to_s.
-  fn last_rest(s: String) -> (char, String) {
-    let mut n = s.chars().rev();
-    let last = n.next().unwrap();
-    let rest = n.rev().collect::<String>();
-    (last, rest)
+  fn head_tail(self) -> (u64, Option<Box<Self>>) {
+    match self.left {
+      Some(bx) => (self.digit, Some(bx)),
+      None => (self.digit, None),
+    }
   }
 
   fn set_left(&mut self, d: Digits<'a>) {
@@ -102,9 +113,36 @@ impl<'a> Digits<'a> {
     Digits { mapping: self.mapping, digit: 0, left: None }
   }
 
+  /// `new_zero` returns a Digits instance with value of zero and the current character mapping.
+  pub fn new_zero(mapping: &'a BaseCustom<char>) -> Self {
+    Digits { mapping: mapping, digit: 0, left: None }
+  }
+
+  /// `is_zero` returns bool value of if the number is zero
+  pub fn is_zero(&self) -> bool {
+    if self.digit != 0 { return false }
+    match &self.left {
+      &None => { true },
+      &Some(ref bx) => { bx.is_zero() },
+    }
+  }
+
+  /// `pinky` is the smallest digit.
+  /// a.k.a. current digit in the linked list.
+  /// a.k.a. the right most digit.
+  /// This will be a char value for that digit.
+  pub fn pinky(&self) -> char {
+    self.mapping.char(self.digit as usize).unwrap()
+  }
+
   /// `one` returns a Digits instance with value of one and the current character mapping.
   pub fn one(&self) -> Self {
     Digits { mapping: self.mapping, digit: 1, left: None }
+  }
+
+  /// `new_one` returns a Digits instance with value of one and the current character mapping.
+  pub fn new_one(mapping: &'a BaseCustom<char>) -> Self {
+    Digits { mapping: mapping, digit: 1, left: None }
   }
 
   fn is_end(&self) -> bool {
@@ -118,16 +156,17 @@ impl<'a> Digits<'a> {
   pub fn add(&mut self, other: Self) -> Self {
     assert!(self.mapping == other.mapping);
     if other.is_end() { return self.clone(); };
-    let (last, rest) = Digits::last_rest(other.to_s());
+    let (last, rest) = other.head_tail();
 
     // sums current single digit
-    let added = self.mapping.gen(self.mapping.decimal(last.to_string()) + self.digit);
-    let (l, r) = Digits::last_rest(added);
-    self.digit = self.mapping.decimal(l.to_string());
+    let added = self.propagate(self.mapping.gen(last + self.digit));
+    let (l, r) = added.head_tail();
+    self.digit = l;
 
     // sums for left
-    let mut intermediate = Digits::new(self.mapping, r);
-    intermediate.add(Digits::new(self.mapping, rest));
+    let mut intermediate = Digits::new_zero(self.mapping);
+    if let Some(dg) = r { intermediate.add(dg.replicate()); }
+    if let Some(dg) = rest { intermediate.add(dg.replicate()); }
 
     let current_left = match self.left.clone() {
       None => { Box::new(self.zero()) },
@@ -135,48 +174,6 @@ impl<'a> Digits<'a> {
     }.as_ref().clone();
 
     self.set_left( intermediate.add(current_left).clone() );
-    self.clone()
-  }
-
-  /// Multiplies two Digits instances together.  The one the `mul` method is called on
-  /// must be mutable and modifies itself.  The other is consumed.
-  ///
-  /// Returns a clone of the updated `Self` as well.
-  // TODO: Figure out multiply by zero scenario
-  pub fn mul(&mut self, other: Self) -> Self {
-    assert!(self.mapping == other.mapping);
-    let o = other.to_s();
-    let mut iter = o.chars().rev().enumerate();
-    let mut add_after: Vec<Digits> = vec![];
-    loop {
-      match iter.next() {
-        None => break,
-        Some((index, digit_symbol)) => {
-          let value = self.mapping.decimal(digit_symbol.to_string()) * self.digit;
-          let (val, mut rest) = Digits::last_rest(self.mapping.gen(value));
-          self.digit = self.mapping.decimal(val.to_string());
-
-          match self.left.clone() {
-            None => (),
-            Some(ref bx) => {
-              self.set_left(bx.clone().mul(Digits::new(self.mapping, rest.clone())));
-            },
-          };
-
-          // CARRY-OVER-VALUES * BASE^(INDEX+1)
-          for _ in 0..index+1 {
-            rest = format!("{}{}", rest, self.mapping.gen(0));
-          }
-          // ADD AFTER “ALL” MULTIPLICATION
-          add_after.push(Digits::new(self.mapping, rest));
-        },
-      }
-    }
-    let iter = add_after.iter();
-    for addable in iter {
-      println!("ADDABLE: {}", addable);
-      self.add(addable.clone());
-    }
     self.clone()
   }
 }
