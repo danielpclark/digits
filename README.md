@@ -1,5 +1,5 @@
 # digits
-[![Build Status](https://travis-ci.org/danielpclark/digits.svg)](https://travis-ci.org/danielpclark/digits)
+[![Build Status](https://travis-ci.org/danielpclark/digits.svg?branch=master)](https://travis-ci.org/danielpclark/digits)
 [![crates.io version](https://img.shields.io/crates/v/digits.svg)](https://crates.io/crates/digits)
 [![License](https://img.shields.io/crates/l/digits.svg)]()
 
