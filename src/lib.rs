@@ -186,7 +186,10 @@ impl<'a> Digits<'a> {
   ///
   /// Returns a clone of the updated `Self` as well.
   pub fn mul(&mut self, other: Self) -> Self {
-    self.multiply(other, 0)
+    let (d, r) = self.multiply(other, 0).head_tail();
+    self.digit = d;
+    if let Some(rest) = r { self.set_left(rest.replicate()); }
+    self.clone()
   }
 
   fn multiply(&mut self, other: Self, power_of_ten: u32) -> Self {
