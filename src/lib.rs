@@ -181,6 +181,17 @@ impl<'a> Digits<'a> {
     self.clone()
   }
 
+  // multiply self by 10^x without using typical multiplication
+  fn pow_ten(&self, positions: usize) -> Self {
+    let mut result: Digits = self.clone();
+    for _ in 0..positions {
+      let original = result;
+      result = Digits::new_zero(self.mapping);
+      result.set_left(original);
+    }
+    result
+  }
+
   /// Multiply two Digits instances together.  The one the `mul` method is called on
   /// must be mutable and modifies itself.  The other is consumed.
   ///
@@ -192,9 +203,9 @@ impl<'a> Digits<'a> {
     self.clone()
   }
 
-  fn multiply(&mut self, other: Self, power_of_ten: u32) -> Self {
+  fn multiply(&mut self, other: Self, power_of_ten: usize) -> Self {
     let mut additives: Vec<Digits> = vec![];
-    let mut position: u32 = power_of_ten;
+    let mut position: usize = power_of_ten;
     let mut o = Some(Box::new(other));
     loop {
       match o.clone() {
@@ -202,7 +213,7 @@ impl<'a> Digits<'a> {
           let (dgt, tail) = thing.head_tail();
           o = tail;
 
-          let mltply = self.propagate((self.digit * dgt * 10_u64.pow(position)).to_string());
+          let mltply = self.propagate((self.digit * dgt).to_string()).pow_ten(position);
 
           let mapping = self.mapping.clone();
 
