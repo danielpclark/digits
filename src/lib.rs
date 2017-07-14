@@ -180,6 +180,63 @@ impl<'a> Digits<'a> {
     self.set_left( intermediate.add(current_left).clone() );
     self.clone()
   }
+
+  /// Multiply two Digits instances together.  The one the `mul` method is called on
+  /// must be mutable and modifies itself.  The other is consumed.
+  ///
+  /// Returns a clone of the updated `Self` as well.
+  pub fn mul(&mut self, other: Self) -> Self {
+    self.multiply(other, 0)
+  }
+
+  fn multiply(&mut self, other: Self, power_of_ten: u32) -> Self {
+    let mut additives: Vec<Digits> = vec![];
+    let mut position: u32 = power_of_ten;
+    let mut o = Some(Box::new(other));
+    loop {
+      match o.clone() {
+        Some(thing) => {
+          let (dgt, tail) = thing.head_tail();
+          o = tail;
+
+          let mltply = self.propagate((self.digit * dgt * 10_u64.pow(position)).to_string());
+
+          let mapping = self.mapping.clone();
+
+          if let Some(ref mut bx) = self.left {
+            additives.push(
+              bx.clone().multiply(
+                Digits::new(
+                  mapping,
+                  self.mapping.gen(dgt).to_string()
+                ),
+                position + 1
+              )
+            );
+          };
+
+          if !mltply.is_zero() { additives.push( mltply ); }
+        },
+        None => break,
+      }
+
+      position += 1;
+    }
+
+    let mut result = self.zero();
+
+    loop {
+      match additives.pop() {
+        Some(dg) => {
+          println!("Adding: {}", dg.to_s());
+          result.add(dg);
+        },
+        None => break,
+      }
+    }
+
+    result
+  }
 }
 
 /// NODOC

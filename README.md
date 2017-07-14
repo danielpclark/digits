@@ -20,7 +20,7 @@ Use any characters as your own numeric base and convert to and from decimal.  Th
 Add the following to your Cargo.toml file
 ```toml
 [dependencies]
-digits = "^0.0.1"
+digits = "^0.0.3"
 ```
 
 To include it for usage add
