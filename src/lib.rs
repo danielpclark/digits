@@ -190,7 +190,6 @@ impl<'a> Digits<'a> {
   }
 
   fn multiply(&mut self, other: Self, power_of_ten: u32) -> Self {
-    println!("STILL DEBUGGING THIS!");
     let mut additives: Vec<Digits> = vec![];
     let mut position: u32 = power_of_ten;
     let mut o = Some(Box::new(other));
@@ -200,9 +199,7 @@ impl<'a> Digits<'a> {
           let (dgt, tail) = thing.head_tail();
           o = tail;
 
-          println!("{:?} * {:?} = {:?}", self.digit, dgt, self.digit * dgt);
           let mltply = self.propagate((self.digit * dgt * 10_u64.pow(position)).to_string());
-          println!("{:?} {}", position, mltply.to_s());
 
           let mapping = self.mapping.clone();
 
@@ -211,7 +208,7 @@ impl<'a> Digits<'a> {
               bx.clone().multiply(
                 Digits::new(
                   mapping,
-                  dgt.to_string()
+                  self.mapping.gen(dgt).to_string()
                 ),
                 position + 1
               )
@@ -226,16 +223,19 @@ impl<'a> Digits<'a> {
       position += 1;
     }
 
+    let mut result = self.zero();
+
     loop {
       match additives.pop() {
         Some(dg) => {
-          self.add(dg);
+          println!("Adding: {}", dg.to_s());
+          result.add(dg);
         },
         None => break,
       }
     }
 
-    self.clone()
+    result
   }
 }
 
