@@ -186,8 +186,13 @@ impl<'a> Digits<'a> {
   ///
   /// Returns a clone of the updated `Self` as well.
   pub fn mul(&mut self, other: Self) -> Self {
+    self.multiply(other, 0)
+  }
+
+  fn multiply(&mut self, other: Self, power_of_ten: u32) -> Self {
+    println!("STILL DEBUGGING THIS!");
     let mut additives: Vec<Digits> = vec![];
-    let mut position: u32 = 0;
+    let mut position: u32 = power_of_ten;
     let mut o = Some(Box::new(other));
     loop {
       match o.clone() {
@@ -203,11 +208,12 @@ impl<'a> Digits<'a> {
 
           if let Some(ref mut bx) = self.left {
             additives.push(
-              bx.clone().mul(
+              bx.clone().multiply(
                 Digits::new(
                   mapping,
                   dgt.to_string()
-                )
+                ),
+                position + 1
               )
             );
           };
@@ -217,7 +223,7 @@ impl<'a> Digits<'a> {
         None => break,
       }
 
-      position += 1; // TODO! FIXME! The second iteration is only 1 the first time
+      position += 1;
     }
 
     loop {
