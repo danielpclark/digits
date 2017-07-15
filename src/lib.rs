@@ -147,6 +147,15 @@ impl<'a> Digits<'a> {
     Digits { mapping: mapping, digit: 1, left: None }
   }
 
+  /// `is_one` returns bool value of if the number is one
+  pub fn is_one(&self) -> bool {
+    if self.digit != 1 { return false }
+    match &self.left {
+      &None => { true },
+      &Some(ref bx) => { bx.is_zero() },
+    }
+  }
+
   // A non-consuming quick end check.
   // More efficient than calling `is_zero` when this applies.
   fn is_end(&self) -> bool {
@@ -178,6 +187,47 @@ impl<'a> Digits<'a> {
     }.as_ref().clone();
 
     self.set_left( intermediate.add(current_left).clone() );
+    self.clone()
+  }
+
+  /// `succ` plus one
+  pub fn succ(&mut self) -> Self {
+    let one = self.one();
+    self.add(one)
+  }
+
+  /// `pred_till_zero` minus one unless already zero, then zero
+  pub fn pred_till_zero(&mut self) -> Self {
+    if self.digit == 0 {
+      if self.is_end() { return self.clone(); }
+      self.digit = self.mapping.base - 1;
+      let mut one = false;
+      if let Some(ref mut bx) = self.left {
+        if bx.is_one() {
+          one = true;
+        } else {
+          bx.pred_till_zero();
+        }
+      };
+      if one { self.left = None; }
+    } else {
+      self.digit -= 1;
+    }
+    self.clone()
+  }
+
+  /// `pow` multiplies self times the power-of given
+  pub fn pow(&mut self, mut pwr: Self) -> Self {
+    loop {
+      match pwr.is_one() {
+        true => break,
+        false => {
+          let copy = self.clone();
+          self.mul(copy);
+        }
+      }
+      pwr.pred_till_zero();
+    }
     self.clone()
   }
 
@@ -242,7 +292,6 @@ impl<'a> Digits<'a> {
     loop {
       match additives.pop() {
         Some(dg) => {
-          println!("Adding: {}", dg.to_s());
           result.add(dg);
         },
         None => break,

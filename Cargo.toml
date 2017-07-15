@@ -1,6 +1,6 @@
 [package]
 name = "digits"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Daniel P. Clark <6ftdan@gmail.com>"]
 description = "Custom “numeric” incrementor without u64 MAX limit in size. Like a score flipper for a custom character set."
 documentation = "http://danielpclark.github.io/digits/index.html"

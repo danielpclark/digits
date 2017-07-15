@@ -103,3 +103,39 @@ fn cdlxxxii_times_xxxviii_with_mul_method() {
   let xxxviii = cdlxxxii.propagate("38".to_string());
   assert_eq!(cdlxxxii.mul(xxxviii).to_s(), "18316");
 }
+
+#[test]
+fn it_multiplies_powers_of_with_pow() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut ten = Digits::new(&base10, "10".to_string());
+  let two = ten.propagate("2".to_string());
+  assert_eq!(ten.pow(two).to_s(), "100");
+  let two = ten.propagate("2".to_string());
+  assert_eq!(ten.pow(two).to_s(), "10000");
+}
+
+#[test]
+fn it_succs() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut nine = Digits::new(&base10, "9".to_string());
+  assert_eq!(nine.succ().to_s(), "10");
+  assert_eq!(nine.succ().to_s(), "11");
+  assert_eq!(nine.succ().to_s(), "12");
+}
+
+#[test]
+fn it_preds_till_zero() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut ten = Digits::new(&base10, "10".to_string());
+  assert_eq!(ten.pred_till_zero().to_s(), "9");
+  assert_eq!(ten.pred_till_zero().to_s(), "8");
+  assert_eq!(ten.pred_till_zero().to_s(), "7");
+  assert_eq!(ten.pred_till_zero().to_s(), "6");
+  assert_eq!(ten.pred_till_zero().to_s(), "5");
+  assert_eq!(ten.pred_till_zero().to_s(), "4");
+  assert_eq!(ten.pred_till_zero().to_s(), "3");
+  assert_eq!(ten.pred_till_zero().to_s(), "2");
+  assert_eq!(ten.pred_till_zero().to_s(), "1");
+  assert_eq!(ten.pred_till_zero().to_s(), "0");
+  assert_eq!(ten.pred_till_zero().to_s(), "0");
+}
