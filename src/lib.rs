@@ -222,14 +222,14 @@ impl<'a> Digits<'a> {
     }
   }
 
-  /// Creates a new Digits instance with value of zero and uses the provided character mapping.
-  pub fn new_zero(mapping: &'a BaseCustom<char>) -> Self {
-    Digits { mapping: mapping, digit: 0, left: None }
-  }
-
   /// Creates a new Digits instance with value of one and the provided character mapping.
   pub fn new_one(mapping: &'a BaseCustom<char>) -> Self {
     Digits { mapping: mapping, digit: 1, left: None }
+  }
+
+  /// Creates a new Digits instance with value of zero and uses the provided character mapping.
+  pub fn new_zero(mapping: &'a BaseCustom<char>) -> Self {
+    Digits { mapping: mapping, digit: 0, left: None }
   }
 
   /// Creates a new Digits instance with value of one and uses the current character mapping.
