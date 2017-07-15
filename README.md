@@ -3,7 +3,7 @@
 [![crates.io version](https://img.shields.io/crates/v/digits.svg)](https://crates.io/crates/digits)
 [![License](https://img.shields.io/crates/l/digits.svg)]()
 
-Digits is a custom character base numeric sequencer.  This crate is designed for infinite character progressions.  It will contain additive methods such as `add` and `mul`.  _Documentation is coming very soon!_
+Digits is a custom character base numeric sequencer.  This crate is designed for infinite character progressions.  It will contain additive methods such as `add` and `mul`.
 
 This is an extension on top of [base_custom](https://github.com/danielpclark/base_custom).
 
