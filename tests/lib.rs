@@ -1,7 +1,5 @@
 extern crate digits;
-use digits::Digits;
-extern crate base_custom;
-use base_custom::BaseCustom;
+use digits::{BaseCustom,Digits};
 
 #[test]
 fn it_can_return_string_result() {

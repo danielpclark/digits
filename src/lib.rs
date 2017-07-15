@@ -170,8 +170,7 @@ impl<'a> Digits<'a> {
   /// # Example
   ///
   /// ```
-  /// use base_custom::BaseCustom;
-  /// use digits::Digits;
+  /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
@@ -248,6 +247,25 @@ impl<'a> Digits<'a> {
 
   /// Multiplies self times the power-of given Digits parameter.
   ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  ///
+  /// let mut eleven = Digits::new(&base10, "11".to_string());
+  /// let two = Digits::new(&base10, "2".to_string());
+  ///
+  /// assert_eq!(eleven.pow(two).to_s(), "121");
+  /// ```
+  ///
+  /// # Output
+  ///
+  /// ```text
+  /// "121"
+  /// ```
+  ///
   /// Mutates `self`.
   ///
   pub fn pow(&mut self, mut pwr: Self) -> Self {
@@ -281,8 +299,7 @@ impl<'a> Digits<'a> {
   /// # Example
   ///
   /// ```
-  /// use base_custom::BaseCustom;
-  /// use digits::Digits;
+  /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
