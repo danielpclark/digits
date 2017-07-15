@@ -17,7 +17,7 @@
 //!
 //! Primary use case would be brute forcing character sequences.
 extern crate base_custom;
-use base_custom::BaseCustom;
+pub use base_custom::BaseCustom;
 use std::fmt;
 
 /// # struct Digits
@@ -33,12 +33,10 @@ pub struct Digits<'a> {
 }
 
 impl<'a> Digits<'a> {
-  /// `new` creates a new Digits instance with the provided character set and value.
+  /// Creates a new Digits instance with the provided character set and value.
   ///
   /// The first parameter must be a BaseCustom object which defines and maps all values.
   /// The second parameter is a string value with all valid characters from the BaseCustom set.
-  ///
-  /// You can view the numbers current value at any time with `to_s()` or `to_string()`.
   pub fn new<S>(mapping: &'a BaseCustom<char>, number: S) -> Digits<'a>
   where S: Into<String> {
     let number = number.into();
@@ -62,10 +60,12 @@ impl<'a> Digits<'a> {
     }
   }
 
-  /// `replicate` — alias for clone (useful for unboxing)
+  /// An alias for `clone`. _Useful for unboxing._
   pub fn replicate(self) -> Self { self.clone() }
 
-  /// `propagate` creates a new number from the same underlying numeric base
+  /// Creates a new Digits instance with the internal character set and given value.
+  ///
+  /// The parameter is a string value with all valid characters from the BaseCustom set.
   pub fn propagate<S>(&self, number: S) -> Self
   where S: Into<String> {
     Digits::new(self.mapping, number)
@@ -102,7 +102,7 @@ impl<'a> Digits<'a> {
     }
   }
 
-  /// `length` returns a `usize` of the total linked list length.
+  /// Returns a `usize` of the total linked list length.
   pub fn length(&self) -> usize {
     match &self.left {
       &None => 1,
@@ -110,17 +110,17 @@ impl<'a> Digits<'a> {
     }
   }
 
-  /// `zero` returns a Digits instance with value of zero and the current character mapping.
+  /// Creates a new Digits instance with value of zero and the current character mapping.
   pub fn zero(&self) -> Self {
     Digits::new_zero(self.mapping)
   }
 
-  /// `new_zero` returns a Digits instance with value of zero and the current character mapping.
+  /// Creates a new Digits instance with value of zero and uses the provided character mapping.
   pub fn new_zero(mapping: &'a BaseCustom<char>) -> Self {
     Digits { mapping: mapping, digit: 0, left: None }
   }
 
-  /// `is_zero` returns bool value of if the number is zero
+  /// Returns bool value of if the number is zero.
   pub fn is_zero(&self) -> bool {
     if self.digit != 0 { return false }
     match &self.left {
@@ -129,25 +129,25 @@ impl<'a> Digits<'a> {
     }
   }
 
-  /// `pinky` is the smallest digit.
-  /// a.k.a. current digit in the linked list.
+  /// The “pinky” is the smallest digit
+  /// a.k.a. current digit in the linked list
   /// a.k.a. the right most digit.
-  /// This will be a char value for that digit.
+  /// This will be a `char` value for that digit.
   pub fn pinky(&self) -> char {
     self.mapping.char(self.digit as usize).unwrap()
   }
 
-  /// `one` returns a Digits instance with value of one and the current character mapping.
+  /// Creates a new Digits instance with value of one and uses the current character mapping.
   pub fn one(&self) -> Self {
     Digits::new_one(self.mapping)
   }
 
-  /// `new_one` returns a Digits instance with value of one and the current character mapping.
+  /// Creates a new Digits instance with value of one and the provided character mapping.
   pub fn new_one(mapping: &'a BaseCustom<char>) -> Self {
     Digits { mapping: mapping, digit: 1, left: None }
   }
 
-  /// `is_one` returns bool value of if the number is one
+  /// Returns bool value of if the number is one.
   pub fn is_one(&self) -> bool {
     if self.digit != 1 { return false }
     match &self.left {
@@ -165,7 +165,24 @@ impl<'a> Digits<'a> {
   /// Add two Digits instances together.  The one the `add` method is called on
   /// must be mutable and modifies itself.  The other is consumed.
   ///
-  /// Returns a clone of the updated `Self` as well.
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  ///
+  /// let mut eleven = Digits::new(&base10, "11".to_string());
+  /// let two = Digits::new(&base10, "2".to_string());
+  ///
+  /// assert_eq!(eleven.add(two).to_s(), "13");
+  /// ```
+  ///
+  /// # Output
+  ///
+  /// ```text
+  /// "13"
+  /// ```
   pub fn add(&mut self, other: Self) -> Self {
     assert!(self.mapping == other.mapping);
     if other.is_end() { return self.clone(); };
@@ -190,13 +207,13 @@ impl<'a> Digits<'a> {
     self.clone()
   }
 
-  /// `succ` plus one
+  /// Plus one.
   pub fn succ(&mut self) -> Self {
     let one = self.one();
     self.add(one)
   }
 
-  /// `pred_till_zero` minus one unless already zero, then zero
+  /// Minuses one unless it's zero, then it just returns a Digits instance of zero.
   pub fn pred_till_zero(&mut self) -> Self {
     if self.digit == 0 {
       if self.is_end() { return self.clone(); }
@@ -216,7 +233,26 @@ impl<'a> Digits<'a> {
     self.clone()
   }
 
-  /// `pow` multiplies self times the power-of given
+  /// Multiplies self times the power-of given Digits parameter.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  ///
+  /// let mut eleven = Digits::new(&base10, "11".to_string());
+  /// let two = Digits::new(&base10, "2".to_string());
+  ///
+  /// assert_eq!(eleven.pow(two).to_s(), "121");
+  /// ```
+  ///
+  /// # Output
+  ///
+  /// ```text
+  /// "121"
+  /// ```
   pub fn pow(&mut self, mut pwr: Self) -> Self {
     loop {
       match pwr.is_one() {
@@ -245,7 +281,24 @@ impl<'a> Digits<'a> {
   /// Multiply two Digits instances together.  The one the `mul` method is called on
   /// must be mutable and modifies itself.  The other is consumed.
   ///
-  /// Returns a clone of the updated `Self` as well.
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  ///
+  /// let mut eleven = Digits::new(&base10, "11".to_string());
+  /// let two = Digits::new(&base10, "2".to_string());
+  ///
+  /// assert_eq!(eleven.mul(two).to_s(), "22");
+  /// ```
+  ///
+  /// # Output
+  ///
+  /// ```text
+  /// "22"
+  /// ```
   pub fn mul(&mut self, other: Self) -> Self {
     let (d, r) = self.multiply(other, 0).head_tail();
     self.digit = d;
@@ -253,6 +306,8 @@ impl<'a> Digits<'a> {
     self.clone()
   }
 
+  // Internal implementation for multiply. Needs the recursive
+  // value of powers of ten for addition.
   fn multiply(&mut self, other: Self, power_of_ten: usize) -> Self {
     let mut additives: Vec<Digits> = vec![];
     let mut position: usize = power_of_ten;

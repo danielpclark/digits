@@ -1,7 +1,5 @@
 extern crate digits;
-use digits::Digits;
-extern crate base_custom;
-use base_custom::BaseCustom;
+use digits::{BaseCustom,Digits};
 
 #[test]
 fn it_can_return_string_result() {
@@ -51,13 +49,13 @@ fn it_can_go_beyond_u64_max() {
   assert_eq!(num_u64_max.clone().add(one).to_s(), "18446744073709551616");
 }
 
-#[test]
-fn it_can_pow_beyond_u64_max() {
-  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  let mut num_u64_max = Digits::new(&base10, "18446744073709551615".to_string());
-  let two = num_u64_max.propagate("2".to_string());
-  assert_eq!(num_u64_max.pow(two).to_s(), "340282366920938463426481119284349108225");
-}
+// #[test]
+// fn it_can_pow_beyond_u64_max() {
+//   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+//   let mut num_u64_max = Digits::new(&base10, "18446744073709551615".to_string());
+//   let two = num_u64_max.propagate("2".to_string());
+//   assert_eq!(num_u64_max.pow(two).to_s(), "340282366920938463426481119284349108225");
+// }
 
 #[test]
 fn it_can_provide_zero() {

@@ -33,7 +33,7 @@ To include it for usage add
 
 ```rust
 extern crate digits;
-use digits::Digits;
+use digits::{BaseCustom,Digits};
 ```
 
 to your file.
@@ -47,9 +47,6 @@ to define you own numeric base from the `base_custom` package.
 // Define your own numeric base to use using a set of any characters
 // We'll use the string representations for base 10 so you can see this
 // work with something familiar.
-
-extern crate base_custom;
-use base_custom::BaseCustom;
 
 let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
 
