@@ -17,11 +17,10 @@
 //!
 //! Primary use case would be brute forcing character sequences.
 extern crate base_custom;
+#[doc(no_inline)]
 pub use base_custom::BaseCustom;
 use std::fmt;
 
-/// # struct Digits
-///
 /// This struct acts similar to a full number with a custom numeric character base.
 /// But the underlying implementation is a linked list where all the methods recurse
 /// as far as need to to implement the operations.
@@ -33,135 +32,6 @@ pub struct Digits<'a> {
 }
 
 impl<'a> Digits<'a> {
-  /// Creates a new Digits instance with the provided character set and value.
-  ///
-  /// The first parameter must be a BaseCustom object which defines and maps all values.
-  /// The second parameter is a string value with all valid characters from the BaseCustom set.
-  pub fn new<S>(mapping: &'a BaseCustom<char>, number: S) -> Digits<'a>
-  where S: Into<String> {
-    let number = number.into();
-    if number.is_empty() { return Digits { mapping: mapping, digit: 0, left: None }; };
-    let (last, rest) = {
-      let mut n = number.chars().rev();
-      (n.next().unwrap(), n.rev().collect::<String>())
-    };
-
-    let continuation = {
-      if rest.is_empty() {
-        None
-      } else {
-        Some(Box::new(Digits::new(&mapping, rest)))
-      }
-    };
-    Digits {
-      mapping: mapping,
-      digit: mapping.decimal(last.to_string()),
-      left: continuation,
-    }
-  }
-
-  /// An alias for `clone`. _Useful for unboxing._
-  pub fn replicate(self) -> Self { self.clone() }
-
-  /// Creates a new Digits instance with the internal character set and given value.
-  ///
-  /// The parameter is a string value with all valid characters from the BaseCustom set.
-  pub fn propagate<S>(&self, number: S) -> Self
-  where S: Into<String> {
-    Digits::new(self.mapping, number)
-  }
-
-  /// Gives the full value of all digits within the linked list as a String.
-  pub fn to_s(&self) -> String {
-    let num = self.mapping.gen(self.digit);
-    match &self.left {
-      &None => format!("{}", num),
-      &Some(ref bx) => format!("{}{}", bx.to_s(), num),
-    }
-  }
-
-  /// Gives the full value of all digits within the linked list as a String.
-  pub fn to_string(&self) -> String {
-    self.to_s()
-  }
-
-  // the way to recurse and process Digits
-  fn head_tail(self) -> (u64, Option<Box<Self>>) {
-    match self.left {
-      Some(bx) => (self.digit, Some(bx)),
-      None => (self.digit, None),
-    }
-  }
-
-  // logic for setting left linked list continuation
-  fn set_left(&mut self, d: Digits<'a>) {
-    if d.is_end() {
-      self.left = None;
-    } else {
-      self.left = Some(Box::new(d));
-    }
-  }
-
-  /// Returns a `usize` of the total linked list length.
-  pub fn length(&self) -> usize {
-    match &self.left {
-      &None => 1,
-      &Some(ref l) => { l.length() + 1 }
-    }
-  }
-
-  /// Creates a new Digits instance with value of zero and the current character mapping.
-  pub fn zero(&self) -> Self {
-    Digits::new_zero(self.mapping)
-  }
-
-  /// Creates a new Digits instance with value of zero and uses the provided character mapping.
-  pub fn new_zero(mapping: &'a BaseCustom<char>) -> Self {
-    Digits { mapping: mapping, digit: 0, left: None }
-  }
-
-  /// Returns bool value of if the number is zero.
-  pub fn is_zero(&self) -> bool {
-    if self.digit != 0 { return false }
-    match &self.left {
-      &None => { true },
-      &Some(ref bx) => { bx.is_zero() },
-    }
-  }
-
-  /// The “pinky” is the smallest digit
-  /// a.k.a. current digit in the linked list
-  /// a.k.a. the right most digit.
-  /// This will be a `char` value for that digit.
-  pub fn pinky(&self) -> char {
-    self.mapping.char(self.digit as usize).unwrap()
-  }
-
-  /// Creates a new Digits instance with value of one and uses the current character mapping.
-  pub fn one(&self) -> Self {
-    Digits::new_one(self.mapping)
-  }
-
-  /// Creates a new Digits instance with value of one and the provided character mapping.
-  pub fn new_one(mapping: &'a BaseCustom<char>) -> Self {
-    Digits { mapping: mapping, digit: 1, left: None }
-  }
-
-  /// Returns bool value of if the number is one.
-  pub fn is_one(&self) -> bool {
-    if self.digit != 1 { return false }
-    match &self.left {
-      &None => { true },
-      &Some(ref bx) => { bx.is_zero() },
-    }
-  }
-
-  // A non-consuming quick end check.
-  // More efficient than calling `is_zero` when this applies.
-  fn is_end(&self) -> bool {
-    self.digit == 0 && match self.left { None => true, _ => false }
-  }
-
   /// Add two Digits instances together.  The one the `add` method is called on
   /// must be mutable and modifies itself.  The other is consumed.
   ///
@@ -207,75 +77,44 @@ impl<'a> Digits<'a> {
     self.clone()
   }
 
-  /// Plus one.
-  pub fn succ(&mut self) -> Self {
-    let one = self.one();
-    self.add(one)
+  // the way to recurse and process Digits
+  fn head_tail(self) -> (u64, Option<Box<Self>>) {
+    match self.left {
+      Some(bx) => (self.digit, Some(bx)),
+      None => (self.digit, None),
+    }
   }
 
-  /// Minuses one unless it's zero, then it just returns a Digits instance of zero.
-  pub fn pred_till_zero(&mut self) -> Self {
-    if self.digit == 0 {
-      if self.is_end() { return self.clone(); }
-      self.digit = self.mapping.base - 1;
-      let mut one = false;
-      if let Some(ref mut bx) = self.left {
-        if bx.is_one() {
-          one = true;
-        } else {
-          bx.pred_till_zero();
-        }
-      };
-      if one { self.left = None; }
-    } else {
-      self.digit -= 1;
-    }
-    self.clone()
+  // A non-consuming quick end check.
+  // More efficient than calling `is_zero` when this applies.
+  fn is_end(&self) -> bool {
+    self.digit == 0 && match self.left { None => true, _ => false }
   }
 
-  /// Multiplies self times the power-of given Digits parameter.
-  ///
-  /// # Example
-  ///
-  /// ```
-  /// use digits::{BaseCustom,Digits};
-  ///
-  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  ///
-  /// let mut eleven = Digits::new(&base10, "11".to_string());
-  /// let two = Digits::new(&base10, "2".to_string());
-  ///
-  /// assert_eq!(eleven.pow(two).to_s(), "121");
-  /// ```
-  ///
-  /// # Output
-  ///
-  /// ```text
-  /// "121"
-  /// ```
-  pub fn pow(&mut self, mut pwr: Self) -> Self {
-    loop {
-      match pwr.is_one() {
-        true => break,
-        false => {
-          let copy = self.clone();
-          self.mul(copy);
-        }
-      }
-      pwr.pred_till_zero();
+  /// Returns bool value of if the number is one.
+  pub fn is_one(&self) -> bool {
+    if self.digit != 1 { return false }
+    match &self.left {
+      &None => { true },
+      &Some(ref bx) => { bx.is_zero() },
     }
-    self.clone()
   }
 
-  // multiply self by 10^x without using typical multiplication
-  fn pow_ten(&self, positions: usize) -> Self {
-    let mut result: Digits = self.clone();
-    for _ in 0..positions {
-      let original = result;
-      result = Digits::new_zero(self.mapping);
-      result.set_left(original);
+  /// Returns bool value of if the number is zero.
+  pub fn is_zero(&self) -> bool {
+    if self.digit != 0 { return false }
+    match &self.left {
+      &None => { true },
+      &Some(ref bx) => { bx.is_zero() },
     }
-    result
+  }
+
+  /// Returns a `usize` of the total linked list length.
+  pub fn length(&self) -> usize {
+    match &self.left {
+      &None => 1,
+      &Some(ref l) => { l.length() + 1 }
+    }
   }
 
   /// Multiply two Digits instances together.  The one the `mul` method is called on
@@ -354,6 +193,166 @@ impl<'a> Digits<'a> {
     }
 
     result
+  }
+
+  /// Creates a new Digits instance with the provided character set and value.
+  ///
+  /// The first parameter must be a BaseCustom object which defines and maps all values.
+  /// The second parameter is a string value with all valid characters from the BaseCustom set.
+  pub fn new<S>(mapping: &'a BaseCustom<char>, number: S) -> Digits<'a>
+  where S: Into<String> {
+    let number = number.into();
+    if number.is_empty() { return Digits { mapping: mapping, digit: 0, left: None }; };
+    let (last, rest) = {
+      let mut n = number.chars().rev();
+      (n.next().unwrap(), n.rev().collect::<String>())
+    };
+
+    let continuation = {
+      if rest.is_empty() {
+        None
+      } else {
+        Some(Box::new(Digits::new(&mapping, rest)))
+      }
+    };
+    Digits {
+      mapping: mapping,
+      digit: mapping.decimal(last.to_string()),
+      left: continuation,
+    }
+  }
+
+  /// Creates a new Digits instance with value of zero and uses the provided character mapping.
+  pub fn new_zero(mapping: &'a BaseCustom<char>) -> Self {
+    Digits { mapping: mapping, digit: 0, left: None }
+  }
+
+  /// Creates a new Digits instance with value of one and the provided character mapping.
+  pub fn new_one(mapping: &'a BaseCustom<char>) -> Self {
+    Digits { mapping: mapping, digit: 1, left: None }
+  }
+
+  /// Creates a new Digits instance with value of one and uses the current character mapping.
+  pub fn one(&self) -> Self {
+    Digits::new_one(self.mapping)
+  }
+
+  /// The “pinky” is the smallest digit
+  /// a.k.a. current digit in the linked list
+  /// a.k.a. the right most digit.
+  /// This will be a `char` value for that digit.
+  pub fn pinky(&self) -> char {
+    self.mapping.char(self.digit as usize).unwrap()
+  }
+
+  /// Multiplies self times the power-of given Digits parameter.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  ///
+  /// let mut eleven = Digits::new(&base10, "11".to_string());
+  /// let two = Digits::new(&base10, "2".to_string());
+  ///
+  /// assert_eq!(eleven.pow(two).to_s(), "121");
+  /// ```
+  ///
+  /// # Output
+  ///
+  /// ```text
+  /// "121"
+  /// ```
+  pub fn pow(&mut self, mut pwr: Self) -> Self {
+    loop {
+      match pwr.is_one() {
+        true => break,
+        false => {
+          let copy = self.clone();
+          self.mul(copy);
+        }
+      }
+      pwr.pred_till_zero();
+    }
+    self.clone()
+  }
+
+  // multiply self by 10^x without using typical multiplication
+  fn pow_ten(&self, positions: usize) -> Self {
+    let mut result: Digits = self.clone();
+    for _ in 0..positions {
+      let original = result;
+      result = Digits::new_zero(self.mapping);
+      result.set_left(original);
+    }
+    result
+  }
+
+  /// Minuses one unless it's zero, then it just returns a Digits instance of zero.
+  pub fn pred_till_zero(&mut self) -> Self {
+    if self.digit == 0 {
+      if self.is_end() { return self.clone(); }
+      self.digit = self.mapping.base - 1;
+      let mut one = false;
+      if let Some(ref mut bx) = self.left {
+        if bx.is_one() {
+          one = true;
+        } else {
+          bx.pred_till_zero();
+        }
+      };
+      if one { self.left = None; }
+    } else {
+      self.digit -= 1;
+    }
+    self.clone()
+  }
+
+  /// Creates a new Digits instance with the internal character set and given value.
+  ///
+  /// The parameter is a string value with all valid characters from the BaseCustom set.
+  pub fn propagate<S>(&self, number: S) -> Self
+  where S: Into<String> {
+    Digits::new(self.mapping, number)
+  }
+
+  /// An alias for `clone`. _Useful for unboxing._
+  pub fn replicate(self) -> Self { self.clone() }
+
+  // logic for setting left linked list continuation
+  fn set_left(&mut self, d: Digits<'a>) {
+    if d.is_end() {
+      self.left = None;
+    } else {
+      self.left = Some(Box::new(d));
+    }
+  }
+
+  /// Plus one.
+  pub fn succ(&mut self) -> Self {
+    let one = self.one();
+    self.add(one)
+  }
+
+  /// Gives the full value of all digits within the linked list as a String.
+  pub fn to_s(&self) -> String {
+    let num = self.mapping.gen(self.digit);
+    match &self.left {
+      &None => format!("{}", num),
+      &Some(ref bx) => format!("{}{}", bx.to_s(), num),
+    }
+  }
+
+  /// Gives the full value of all digits within the linked list as a String.
+  pub fn to_string(&self) -> String {
+    self.to_s()
+  }
+
+  /// Creates a new Digits instance with value of zero and the current character mapping.
+  pub fn zero(&self) -> Self {
+    Digits::new_zero(self.mapping)
   }
 }
 
