@@ -52,6 +52,14 @@ fn it_can_go_beyond_u64_max() {
 }
 
 #[test]
+fn it_can_pow_beyond_u64_max() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num_u64_max = Digits::new(&base10, "18446744073709551615".to_string());
+  let two = num_u64_max.propagate("2".to_string());
+  assert_eq!(num_u64_max.pow(two).to_s(), "340282366920938463426481119284349108225");
+}
+
+#[test]
 fn it_can_provide_zero() {
   let base3 = BaseCustom::<char>::new("ABC".chars().collect());
   let num = Digits::new(&base3, "BA".to_string());
