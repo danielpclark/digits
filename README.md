@@ -26,7 +26,7 @@ math methods added to help progress through sequences as you would like.
 Add the following to your Cargo.toml file
 ```toml
 [dependencies]
-digits = "^0.0.5"
+digits = "^0.1"
 ```
 
 To include it for usage add
