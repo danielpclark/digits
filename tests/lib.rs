@@ -50,7 +50,7 @@ fn it_can_go_beyond_u64_max() {
 }
 
 // #[test]
-// Fn it_can_pow_beyond_u64_max() {
+// fn it_can_pow_beyond_u64_max() {
 //   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
 //   let mut num_u64_max = Digits::new(&base10, "18446744073709551615".to_string());
 //   let two = num_u64_max.propagate("2".to_string());
