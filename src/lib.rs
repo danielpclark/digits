@@ -148,9 +148,10 @@ impl<'a> Digits<'a> {
   // Internal implementation for multiply. Needs the recursive
   // value of powers of ten for addition.
   fn multiply(&mut self, other: Self, power_of_ten: usize) -> Self {
-    let mut additives: Vec<Digits> = vec![];
     let mut position: usize = power_of_ten;
     let mut o = Some(Box::new(other));
+    let mut result = self.zero();
+
     loop {
       match o.clone() {
         Some(thing) => {
@@ -162,7 +163,7 @@ impl<'a> Digits<'a> {
           let mapping = self.mapping.clone();
 
           if let Some(ref mut bx) = self.left {
-            additives.push(
+            result.add(
               bx.clone().multiply(
                 Digits::new(
                   mapping,
@@ -173,23 +174,12 @@ impl<'a> Digits<'a> {
             );
           };
 
-          if !mltply.is_zero() { additives.push( mltply ); }
+          if !mltply.is_zero() { result.add( mltply ); }
         },
         None => break,
       }
 
       position += 1;
-    }
-
-    let mut result = self.zero();
-
-    loop {
-      match additives.pop() {
-        Some(dg) => {
-          result.add(dg);
-        },
-        None => break,
-      }
     }
 
     result
