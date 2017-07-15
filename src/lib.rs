@@ -60,9 +60,7 @@ impl<'a> Digits<'a> {
     }
   }
 
-  /// An alias for `clone`.
-  ///
-  /// (useful for unboxing)
+  /// An alias for `clone`. _Useful for unboxing._
   pub fn replicate(self) -> Self { self.clone() }
 
   /// Creates a new Digits instance with the internal character set and given value.
@@ -185,10 +183,6 @@ impl<'a> Digits<'a> {
   /// ```text
   /// "13"
   /// ```
-  ///
-  /// Mutates `self`.
-  ///
-  /// Returns a clone of the updated `Self` as well.
   pub fn add(&mut self, other: Self) -> Self {
     assert!(self.mapping == other.mapping);
     if other.is_end() { return self.clone(); };
@@ -214,18 +208,12 @@ impl<'a> Digits<'a> {
   }
 
   /// Plus one.
-  ///
-  /// Mutates `self`.
   pub fn succ(&mut self) -> Self {
     let one = self.one();
     self.add(one)
   }
 
-  /// Minus one.
-  ///
-  /// Mutates `self`.
-  ///
-  /// Minuses one unless it's zero, then it would return a Digits instance of zero.
+  /// Minuses one unless it's zero, then it just returns a Digits instance of zero.
   pub fn pred_till_zero(&mut self) -> Self {
     if self.digit == 0 {
       if self.is_end() { return self.clone(); }
@@ -265,9 +253,6 @@ impl<'a> Digits<'a> {
   /// ```text
   /// "121"
   /// ```
-  ///
-  /// Mutates `self`.
-  ///
   pub fn pow(&mut self, mut pwr: Self) -> Self {
     loop {
       match pwr.is_one() {
@@ -314,10 +299,6 @@ impl<'a> Digits<'a> {
   /// ```text
   /// "22"
   /// ```
-  ///
-  /// Mutates `self`.
-  ///
-  /// Returns a clone of the updated `Self` as well.
   pub fn mul(&mut self, other: Self) -> Self {
     let (d, r) = self.multiply(other, 0).head_tail();
     self.digit = d;
