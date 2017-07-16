@@ -173,7 +173,7 @@ impl<'a> Digits<'a> {
             );
           };
 
-          if !mltply.is_zero() { result.add( mltply ); }
+          result.add( mltply );
         },
         None => break,
       }
