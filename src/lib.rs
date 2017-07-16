@@ -160,9 +160,8 @@ impl<'a> Digits<'a> {
 
           let mltply = self.propagate((self.digit * dgt).to_string()).pow_ten(position);
 
-          let mapping = self.mapping.clone();
-
           if let Some(ref mut bx) = self.left {
+            let mapping = self.mapping.clone();
             result.add(
               bx.clone().multiply(
                 Digits::new(
