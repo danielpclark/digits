@@ -268,7 +268,7 @@ impl<'a> Digits<'a> {
     self.clone()
   }
 
-  // multiply self by 10^x without using typical multiplication
+  // multiply self by 10ⁿ without using typical multiplication
   fn pow_ten(&self, positions: usize) -> Self {
     let mut result: Digits = self.clone();
     for _ in 0..positions {
@@ -345,9 +345,8 @@ impl<'a> Digits<'a> {
   }
 }
 
-/// NODOC
+#[allow(missing_docs)]
 pub trait Into<String> {
-  /// NODOC
   fn into(self) -> String;
 }
 
