@@ -15,7 +15,17 @@ fn it_can_return_string_result() {
 fn it_can_add() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let num1 = Digits::new_one(&base10);
-  assert_eq!(num1.clone().add(num1).to_s(), "2");
+  assert_eq!(num1.clone().add(num1.clone()).to_s(), "2");
+  assert_eq!(num1.to_s(), "1");
+}
+
+#[test]
+fn it_can_mut_add() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num1 = Digits::new_one(&base10);
+  let num2 = num1.propagate("2".to_string());
+  num1.mut_add(num2);
+  assert_eq!(num1.to_s(), "3");
 }
 
 #[test]
@@ -82,24 +92,35 @@ fn it_can_prove_zero() {
 fn eleven_times_one_with_mul_method() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let one = Digits::new_one(&base10);
-  let mut eleven = one.propagate("11".to_string());
+  let eleven = one.propagate("11".to_string());
   assert_eq!(eleven.mul(one).to_s(), "11");
 }
 
 #[test]
 fn one_times_eleven_with_mul_method() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  let mut one = Digits::new_one(&base10);
+  let one = Digits::new_one(&base10);
   let eleven = one.propagate("11".to_string());
   assert_eq!(one.mul(eleven).to_s(), "11");
+  assert_eq!(one.to_s(), "1");
 }
 
 #[test]
 fn cdlxxxii_times_xxxviii_with_mul_method() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  let mut cdlxxxii = Digits::new(&base10, "482".to_string());
+  let cdlxxxii = Digits::new(&base10, "482".to_string());
   let xxxviii = cdlxxxii.propagate("38".to_string());
   assert_eq!(cdlxxxii.mul(xxxviii).to_s(), "18316");
+  assert_eq!(cdlxxxii.to_s(), "482");
+}
+
+#[test]
+fn cdlxxxii_times_xxxviii_with_mut_mul_method() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut cdlxxxii = Digits::new(&base10, "482".to_string());
+  let xxxviii = cdlxxxii.propagate("38".to_string());
+  cdlxxxii.mut_mul(xxxviii);
+  assert_eq!(cdlxxxii.to_s(), "18316");
 }
 
 #[test]
