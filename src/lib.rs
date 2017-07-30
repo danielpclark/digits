@@ -53,27 +53,7 @@ impl<'a> Digits<'a> {
   /// "13"
   /// ```
   pub fn add(&self, other: Self) -> Self {
-    assert!(self.mapping == other.mapping);
-    if other.is_end() { return self.clone(); };
-    let (last, rest) = other.head_tail();
-
-    // sums current single digit
-    let added = self.propagate(self.mapping.gen(last + self.digit));
-    let (l, r) = added.head_tail();
-    let mut result = Digits::new(self.mapping, self.mapping.gen(l));
-
-    // sums for left
-    let mut intermediate = Digits::new_zero(self.mapping);
-    if let Some(dg) = r { intermediate.mut_add(dg.replicate()); }
-    if let Some(dg) = rest { intermediate.mut_add(dg.replicate()); }
-
-    let current_left = match self.left.clone() {
-      None => { Box::new(self.zero()) },
-      Some(bx) => { bx },
-    }.as_ref().clone();
-
-    result.set_left( intermediate.mut_add(current_left).clone() );
-    result
+    self.clone().mut_add(other)
   }
 
   // the way to recurse and process Digits
@@ -316,12 +296,13 @@ impl<'a> Digits<'a> {
   /// "121"
   /// ```
   pub fn pow(&mut self, mut pwr: Self) -> Self {
+    if pwr.is_zero() { return self.one(); }
+    let copy = self.clone();
     loop {
       match pwr.is_one() {
         true => break,
         false => {
-          let copy = self.clone();
-          self.mut_mul(copy);
+          self.mut_mul(copy.clone());
         }
       }
       pwr.pred_till_zero();
@@ -409,6 +390,50 @@ impl<'a> Digits<'a> {
 #[allow(missing_docs)]
 pub trait Into<String> {
   fn into(self) -> String;
+}
+
+impl<'a> From<(&'a BaseCustom<char>, u64)> for Digits<'a> {
+  fn from(d: (&'a BaseCustom<char>, u64)) -> Digits<'a> {
+    let mapping = d.0;
+    let value = d.1;
+    Digits::new(mapping, mapping.gen(value))
+  }
+}
+
+impl<'a,'b> From<(&'a BaseCustom<char>, Digits<'b>)> for Digits<'a> {
+  fn from(d: (&'a BaseCustom<char>, Digits<'b>)) -> Digits<'a> {
+    let mapping = d.0;
+    let source = d.1;
+    let from_base = source.mapping.base;
+    let mut result = Digits::new_zero(mapping);
+    let mut pointer: Option<Box<Digits<'b>>> = Some(Box::new(source));
+    let mut position = 0;
+    loop {
+      match pointer {
+        Some(bx) => {
+          let (h, t) = bx.head_tail();
+          if h != 0 { // speed optimization
+            result.mut_add(
+              Digits::new(mapping, mapping.gen(h)).mul(
+                Digits::new(mapping, mapping.gen(from_base)).
+                  pow(Digits::new(mapping, mapping.gen(position)))
+              )
+            );
+          }
+          position += 1;
+          pointer = t;
+        },
+        None => break,
+      }
+    }
+    result
+  }
+}
+
+impl<'a,'b> From<(Digits<'a>, Digits<'b>)> for Digits<'a> {
+  fn from(d: (Digits<'a>, Digits<'b>)) -> Digits<'a> {
+    Digits::from((d.0.mapping, d.1))
+  }
 }
 
 impl<'a> From<Digits<'a>> for String {

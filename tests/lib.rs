@@ -158,3 +158,82 @@ fn it_preds_till_zero() {
   assert_eq!(ten.pred_till_zero().to_s(), "0");
   assert_eq!(ten.pred_till_zero().to_s(), "0");
 }
+
+#[test]
+fn one_mul_two_to_the_power_of_three() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut two = Digits::new(&base10, "2".to_string());
+  let one = Digits::new_one(&base10);
+  let three = Digits::new(&base10, "3".to_string());
+  assert_eq!(one.mul(two.pow(three)).to_s(), "8");
+}
+
+#[test]
+fn two_mut_add_eight() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let two = Digits::new(&base10, "2".to_string());
+  let eight = Digits::new(&base10, "8".to_string());
+  let mut result = Digits::new_zero(&base10);
+  result.mut_add(two);
+  result.mut_add(eight);
+  assert_eq!(result.to_s(), "10");
+}
+
+#[test]
+fn it_multiplies_by_zero() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let one = Digits::new_one(&base10);
+  let zero = Digits::new_zero(&base10);
+  assert_eq!(zero.mul(one.clone()).to_s(), "0");
+  assert_eq!(one.mul(zero).to_s(), "0");
+}
+
+#[test]
+fn it_adds_zero() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let one = Digits::new_one(&base10);
+  let zero = Digits::new_zero(&base10);
+  assert_eq!(zero.clone().add(zero.clone()).to_s(), "0");
+  assert_eq!(one.add(zero).to_s(), "1");
+}
+
+#[test]
+fn get_digits_from_u64() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let ten = Digits::from((&base10, 10_u64));
+  assert_eq!(ten.to_s(), "10");
+}
+
+#[test]
+fn get_digits_from_digits_with_base() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let binary = BaseCustom::<char>::new("01".chars().collect());
+  
+  let bin_ten = Digits::new(&binary, "1010".to_string());
+
+  let ten = Digits::from((&base10, bin_ten));
+  assert_eq!(ten.to_s(), "10");
+}
+
+#[test]
+fn get_digits_from_digits_with_digits() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let binary = BaseCustom::<char>::new("01".chars().collect());
+
+  let digits_to_get_base_from = Digits::new_zero(&base10);
+  
+  let bin_ten = Digits::new(&binary, "1010".to_string());
+
+  let ten = Digits::from((digits_to_get_base_from, bin_ten));
+  assert_eq!(ten.to_s(), "10");
+}
+
+#[test]
+fn it_gets_power_of_zero_and_one() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut ten = Digits::new(&base10, "10".to_string());
+  let one = ten.one();
+  assert_eq!(ten.pow(one).to_s(), "10");
+  let zero = ten.zero();
+  assert_eq!(ten.pow(zero).to_s(), "1");
+}
