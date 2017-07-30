@@ -56,6 +56,26 @@ impl<'a> Digits<'a> {
     self.clone().mut_add(other)
   }
 
+  /// Allows you to generate/encode a Digits from a `u64` or other `Digits` even if they are of a
+  /// different numeric base.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  ///
+  /// let two = Digits::new(&base10, "2".to_string());
+  /// let three = two.gen(3_u64);
+  ///
+  /// assert_eq!(three.to_s(), "3");
+  /// ```
+  pub fn gen<T>(&self, other: T) -> Self
+  where Self: From<(&'a BaseCustom<char>, T)> {
+    Digits::from((self.mapping, other))
+  }
+
   // the way to recurse and process Digits
   fn head_tail(self) -> (u64, Option<Box<Self>>) {
     match self.left {
@@ -471,4 +491,12 @@ impl<'a> fmt::Debug for Digits<'a> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{} with base: {:?}", self, self.mapping)
   }
+}
+
+impl<'a> PartialEq for Digits<'a> {
+    fn eq(&self, other: &Digits<'a>) -> bool {
+        self.mapping == other.mapping &&
+          self.digit == other.digit &&
+          self.left == other.left
+    }
 }

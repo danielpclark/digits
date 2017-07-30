@@ -229,6 +229,16 @@ fn get_digits_from_digits_with_digits() {
 }
 
 #[test]
+fn get_digits_from_digits_with_same_digits_base() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let eleven = Digits::new(&base10, "11".to_string());
+  let one = Digits::new_one(&base10);
+  
+  let result = Digits::from((one, eleven.clone()));
+  assert_eq!(result, eleven);
+}
+
+#[test]
 fn it_gets_power_of_zero_and_one() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let mut ten = Digits::new(&base10, "10".to_string());
