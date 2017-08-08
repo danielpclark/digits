@@ -20,6 +20,10 @@ extern crate base_custom;
 #[doc(no_inline)]
 pub use base_custom::BaseCustom;
 use std::fmt;
+use std::ops::{
+  Add,AddAssign,Mul,MulAssign,BitXor,BitXorAssign
+};
+use std::cmp::{PartialOrd,Ordering};
 
 /// This struct acts similar to a full number with a custom numeric character base.
 /// But the underlying implementation is a linked list where all the methods recurse
@@ -494,9 +498,76 @@ impl<'a> fmt::Debug for Digits<'a> {
 }
 
 impl<'a> PartialEq for Digits<'a> {
-    fn eq(&self, other: &Digits<'a>) -> bool {
-        self.mapping == other.mapping &&
-          self.digit == other.digit &&
-          self.left == other.left
+  fn eq(&self, other: &Digits<'a>) -> bool {
+    self.mapping == other.mapping &&
+      self.digit == other.digit &&
+      self.left == other.left
+  }
+}
+
+impl<'a> Add for Digits<'a> {
+  type Output = Self;
+  fn add(self, other: Self) -> Self {
+    self.clone().mut_add(other)
+  }
+}
+
+impl<'a> AddAssign for Digits<'a> {
+  fn add_assign(&mut self, other: Self) {
+    self.mut_add(other);
+  }
+}
+
+impl<'a> Mul for Digits<'a> {
+  type Output = Self;
+  fn mul(self, other: Self) -> Self {
+    self.multiply(other, 0)
+  }
+}
+
+impl<'a> MulAssign for Digits<'a> {
+  fn mul_assign(&mut self, other: Self) {
+    self.mut_mul(other);
+  }
+}
+
+impl<'a> BitXor for Digits<'a> {
+  type Output = Self;
+  fn bitxor(self, other: Self) -> Self {
+    self.clone().pow(other)
+  }
+}
+
+impl<'a> BitXorAssign for Digits<'a> {
+  fn bitxor_assign(&mut self, other: Self) {
+    self.pow(other);
+  }
+}
+
+impl<'a> PartialOrd for Digits<'a> {
+  fn partial_cmp(&self, other: &Digits<'a>) -> Option<Ordering> {
+    assert!(self.mapping == other.mapping);
+    if self.length() != other.length() {
+      return self.length().partial_cmp(&other.length());
     }
+    let mut result: Option<Ordering>;
+    let mut a: Self = self.clone();
+    let mut b: Self = other.clone();
+    result = a.digit.partial_cmp(&b.digit);
+    loop {
+      match (a.left, b.left) {
+        (Some(x),Some(y)) => {
+          a = x.replicate();
+          b = y.replicate();
+          match a.digit.partial_cmp(&b.digit) {
+            Some(Ordering::Equal) => (),
+            Some(change) => { result = Some(change); },
+            None => (),
+          }
+        }
+        _ => { break }
+      }
+    }
+    result
+  }
 }

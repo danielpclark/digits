@@ -247,3 +247,90 @@ fn it_gets_power_of_zero_and_one() {
   let zero = ten.zero();
   assert_eq!(ten.pow(zero).to_s(), "1");
 }
+
+#[test]
+fn it_can_add_with_plus_symbol(){
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let a = Digits::new(&base10, "1".to_string());
+  let b = Digits::new(&base10, "1".to_string());
+  assert_eq!((a + b).to_s(), "2");
+}
+
+#[test]
+fn it_can_add_assign() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num1 = Digits::new_one(&base10);
+  let num2 = num1.propagate("2".to_string());
+  num1 += num2;
+  assert_eq!(num1.to_s(), "3");
+}
+
+#[test]
+fn cdlxxxii_times_xxxviii_with_times_symbol() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let cdlxxxii = Digits::new(&base10, "482".to_string());
+  let xxxviii = cdlxxxii.propagate("38".to_string());
+  assert_eq!((cdlxxxii * xxxviii).to_s(), "18316");
+}
+
+#[test]
+fn cdlxxxii_times_xxxviii_with_times_equals_symbol() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut cdlxxxii = Digits::new(&base10, "482".to_string());
+  let xxxviii = cdlxxxii.propagate("38".to_string());
+  cdlxxxii *= xxxviii;
+  assert_eq!(cdlxxxii.to_s(), "18316");
+}
+
+#[test]
+fn it_multiplies_powers_of_with_carot() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let ten = Digits::new(&base10, "10".to_string());
+  let two = ten.propagate("2".to_string());
+  assert_eq!((ten ^ two).to_s(), "100");
+}
+
+#[test]
+fn it_multiplies_powers_of_with_carot_assign() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut ten = Digits::new(&base10, "10".to_string());
+  let two = ten.propagate("2".to_string());
+  ten ^= two;
+  assert_eq!(ten.to_s(), "100");
+  let two = ten.propagate("2".to_string());
+  ten ^= two;
+  assert_eq!(ten.to_s(), "10000");
+}
+
+#[test]
+fn it_can_tell_which_digits_is_larger() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let ten = Digits::new(&base10, "10".to_string());
+  let one = ten.one();
+  assert_eq!(one < ten, true);
+  assert_eq!(one > ten, false);
+  assert_eq!(one <= ten, true);
+  assert_eq!(one >= ten, false);
+}
+
+#[test]
+fn it_can_tell_which_digits_is_larger_equal_length() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let big   = Digits::new(&base10,"2".to_string());
+  let small = big.propagate("1".to_string());
+  assert_eq!(small <  big, true);
+  assert_eq!(small >  big, false);
+  assert_eq!(small <= big, true);
+  assert_eq!(small >= big, false);
+}
+
+#[test]
+fn it_can_tell_which_digits_is_larger_equal_length_big() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let big   = Digits::new(&base10,"12349786".to_string());
+  let small = big.propagate("11913785".to_string());
+  assert_eq!(small <  big, true);
+  assert_eq!(small >  big, false);
+  assert_eq!(small <= big, true);
+  assert_eq!(small >= big, false);
+}
