@@ -1,7 +1,7 @@
 # digits
 [![Build Status](https://travis-ci.org/danielpclark/digits.svg?branch=master)](https://travis-ci.org/danielpclark/digits)
 [![crates.io version](https://img.shields.io/crates/v/digits.svg)](https://crates.io/crates/digits)
-[![License](https://img.shields.io/crates/l/digits.svg)]()
+[![Documentation](https://img.shields.io/badge/docs-%F0%9F%91%8D-brightgreen.svg)](http://danielpclark.github.io/digits/index.html)
 
 Digits is a custom character base numeric sequencer.  This crate is designed for infinite character progressions.  It will contain additive methods such as `add` and `mul`.
 
