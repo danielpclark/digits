@@ -89,6 +89,24 @@ impl<'a> Digits<'a> {
     }
   }
 
+  /// Determine if two Digits are compatible for addition or multiplication.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  ///
+  /// let two = Digits::new(&base10, "2".to_string());
+  /// let three = Digits::new(&base10, "3".to_string());
+  ///
+  /// assert!(two.is_compat(&three));
+  /// ```
+  pub fn is_compat(&self, other: &Self) -> bool {
+    self.mapping == other.mapping
+  }
+
   // A non-consuming quick end check.
   // More efficient than calling `is_zero` when this applies.
   fn is_end(&self) -> bool {
