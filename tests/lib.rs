@@ -2,13 +2,52 @@ extern crate digits;
 use digits::{BaseCustom,Digits};
 
 #[test]
-fn it_can_return_string_result() {
+#[should_panic]
+fn it_panics_when_add_performed_with_different_bases() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  let num = Digits::new(&base10, "12345".to_string());
-  assert_eq!(num.to_s(), "12345");
-  assert_eq!(num.to_string(), "12345");
-  let s: String = num.into();
-  assert_eq!(s, "12345");
+  let base2 = BaseCustom::<char>::new("01".chars().collect());
+  let num1 = Digits::new(&base10, "1".to_string());
+  let num2 = Digits::new(&base2, "1".to_string());
+  num1.clone().add(num2.clone());
+}
+
+#[test]
+#[should_panic]
+fn it_panics_when_mut_add_performed_with_different_bases() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let base2 = BaseCustom::<char>::new("01".chars().collect());
+  let num1 = Digits::new(&base10, "1".to_string());
+  let num2 = Digits::new(&base2, "1".to_string());
+  num1.clone().mut_add(num2.clone());
+}
+
+#[test]
+#[should_panic]
+fn it_panics_when_mul_performed_with_different_bases() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let base2 = BaseCustom::<char>::new("01".chars().collect());
+  let num1 = Digits::new(&base10, "9".to_string());
+  let num2 = Digits::new(&base2, "00001001".to_string());
+  assert_eq!(num1.clone().mul(num2.clone()).to_s(), "81");
+}
+
+#[test]
+#[should_panic]
+fn it_panics_when_mut_mul_performed_with_different_bases() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let base2 = BaseCustom::<char>::new("01".chars().collect());
+  let num1 = Digits::new(&base10, "9".to_string());
+  let num2 = Digits::new(&base2, "00001001".to_string());
+  assert_eq!(num1.clone().mut_mul(num2.clone()).to_s(), "81");
+}
+
+#[test]
+fn it_wont_panic_when_pow_performed_with_different_bases() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let base2 = BaseCustom::<char>::new("01".chars().collect());
+  let num1 = Digits::new(&base10, "1".to_string());
+  let num2 = Digits::new(&base2, "1".to_string());
+  assert_eq!(num1.clone().pow(num2.clone()).to_s(), "1");
 }
 
 #[test]

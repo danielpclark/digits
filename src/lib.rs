@@ -36,7 +36,8 @@ pub struct Digits<'a> {
 }
 
 impl<'a> Digits<'a> {
-  /// Add two Digits instances together.
+  /// Add two Digits instances together. This will panic if the two Digits don't share the same
+  /// numeric base.
   ///
   /// # Example
   ///
@@ -120,7 +121,8 @@ impl<'a> Digits<'a> {
     }
   }
 
-  /// Multiply two Digits instances together.
+  /// Multiply two Digits instances together.  This will panic if the two Digits don't share the same
+  /// numeric base.
   ///
   /// # Example
   ///
@@ -147,6 +149,7 @@ impl<'a> Digits<'a> {
   // Internal implementation for multiply. Needs the recursive
   // value of powers of ten for addition.
   fn multiply(&self, other: Self, power_of_ten: usize) -> Self {
+    assert!(self.mapping == other.mapping);
     let mut position: usize = power_of_ten;
     let mut o = Some(Box::new(other));
     let mut result = self.zero();
@@ -176,8 +179,8 @@ impl<'a> Digits<'a> {
     result
   }
 
-  /// Add two Digits instances together.  The one the `mut_add` method is called on
-  /// must be mutable and modifies itself.  The other is consumed.
+  /// Add two Digits instances together.  This will panic if the two Digits don't share the same
+  /// numeric base.
   ///
   /// # Example
   ///
@@ -221,8 +224,8 @@ impl<'a> Digits<'a> {
     self.clone()
   }
 
-  /// Multiply two Digits instances together.  The one the `mut_mul` method is called on
-  /// must be mutable and modifies itself.  The other is consumed.
+  /// Multiply two Digits instances together.  This will panic if the two Digits don't share the same
+  /// numeric base.
   ///
   /// # Example
   ///
