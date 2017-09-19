@@ -2,6 +2,29 @@ extern crate digits;
 use digits::{BaseCustom,Digits};
 
 #[test]
+fn normal_addition_preserves_zero_padding(){
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num1 = Digits::new(&base10, "0001".to_string());
+  let num2 = Digits::new(&base10, "0011".to_string());
+  num1 += num2;
+  assert_eq!(num1.to_s(), "0012");
+}
+
+#[test]
+fn preserve_zero_padding_increment(){
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num = Digits::new(&base10, "0001".to_string());
+  assert_eq!(num.succ().to_s(), "0002");
+}
+
+#[test]
+fn preserve_zero_padding_decrement(){
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num = Digits::new(&base10, "1000".to_string());
+  assert_eq!(num.pred_till_zero().to_s(), "0999");
+}
+
+#[test]
 #[should_panic]
 fn it_panics_when_add_performed_with_different_bases() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
@@ -185,17 +208,17 @@ fn it_succs() {
 fn it_preds_till_zero() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let mut ten = Digits::new(&base10, "10".to_string());
-  assert_eq!(ten.pred_till_zero().to_s(), "9");
-  assert_eq!(ten.pred_till_zero().to_s(), "8");
-  assert_eq!(ten.pred_till_zero().to_s(), "7");
-  assert_eq!(ten.pred_till_zero().to_s(), "6");
-  assert_eq!(ten.pred_till_zero().to_s(), "5");
-  assert_eq!(ten.pred_till_zero().to_s(), "4");
-  assert_eq!(ten.pred_till_zero().to_s(), "3");
-  assert_eq!(ten.pred_till_zero().to_s(), "2");
-  assert_eq!(ten.pred_till_zero().to_s(), "1");
-  assert_eq!(ten.pred_till_zero().to_s(), "0");
-  assert_eq!(ten.pred_till_zero().to_s(), "0");
+  assert_eq!(ten.pred_till_zero().to_s(), "09");
+  assert_eq!(ten.pred_till_zero().to_s(), "08");
+  assert_eq!(ten.pred_till_zero().to_s(), "07");
+  assert_eq!(ten.pred_till_zero().to_s(), "06");
+  assert_eq!(ten.pred_till_zero().to_s(), "05");
+  assert_eq!(ten.pred_till_zero().to_s(), "04");
+  assert_eq!(ten.pred_till_zero().to_s(), "03");
+  assert_eq!(ten.pred_till_zero().to_s(), "02");
+  assert_eq!(ten.pred_till_zero().to_s(), "01");
+  assert_eq!(ten.pred_till_zero().to_s(), "00");
+  assert_eq!(ten.pred_till_zero().to_s(), "00");
 }
 
 #[test]

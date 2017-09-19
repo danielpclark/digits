@@ -58,7 +58,7 @@ impl<'a> Digits<'a> {
   /// "13"
   /// ```
   pub fn add(&self, other: Self) -> Self {
-    self.clone().mut_add(other)
+    self.clone().mut_add_internal(other, false)
   }
 
   /// Allows you to generate/encode a Digits from a `u64` or other `Digits` even if they are of a
@@ -183,10 +183,10 @@ impl<'a> Digits<'a> {
           let current_digit = self.propagate(self.mapping.gen(dgt).to_string());
 
           if let Some(ref bx) = self.left {
-            result.mut_add(bx.clone().multiply(current_digit, position + 1));
+            result.mut_add_internal(bx.clone().multiply(current_digit, position + 1), true);
           };
 
-          result.mut_add( mltply );
+          result.mut_add_internal( mltply, true );
         },
         None => break,
       }
@@ -219,6 +219,9 @@ impl<'a> Digits<'a> {
   /// "13"
   /// ```
   pub fn mut_add(&mut self, other: Self) -> Self {
+    self.mut_add_internal(other, false)
+  }
+  fn mut_add_internal(&mut self, other: Self, trim: bool) -> Self {
     assert!(self.mapping == other.mapping);
     if other.is_end() { return self.clone(); };
     let (last, rest) = other.head_tail();
@@ -230,15 +233,20 @@ impl<'a> Digits<'a> {
 
     // sums for left
     let mut intermediate = Digits::new_zero(self.mapping);
-    if let Some(dg) = r { intermediate.mut_add(dg.replicate()); }
-    if let Some(dg) = rest { intermediate.mut_add(dg.replicate()); }
+    if let Some(dg) = r { intermediate.mut_add_internal(dg.replicate(), trim); }
+    if let Some(dg) = rest { intermediate.mut_add_internal(dg.replicate(), trim); }
 
-    let current_left = match self.left.clone() {
-      None => { Box::new(self.zero()) },
-      Some(bx) => { bx },
-    }.as_ref().clone();
+    match self.left.clone() {
+      Some(bx) => {
+        self.set_left( bx.replicate().mut_add_internal(intermediate, trim).clone(), trim );
+      },
+      None => {
+        if !intermediate.is_zero() {
+          self.set_left( intermediate, trim );
+        }
+      }
+    };
 
-    self.set_left( intermediate.mut_add(current_left).clone() );
     self.clone()
   }
 
@@ -266,7 +274,7 @@ impl<'a> Digits<'a> {
   pub fn mut_mul(&mut self, other: Self) -> Self {
     let (d, r) = self.multiply(other, 0).head_tail();
     self.digit = d;
-    if let Some(rest) = r { self.set_left(rest.replicate()); }
+    if let Some(rest) = r { self.set_left(rest.replicate(), true); }
     self.clone()
   }
 
@@ -361,25 +369,20 @@ impl<'a> Digits<'a> {
     for _ in 0..positions {
       let original = result;
       result = Digits::new_zero(self.mapping);
-      result.set_left(original);
+      result.set_left(original, true);
     }
     result
   }
 
   /// Minuses one unless it's zero, then it just returns a Digits instance of zero.
   pub fn pred_till_zero(&mut self) -> Self {
+    if self.is_zero() { return self.clone(); }
     if self.digit == 0 {
-      if self.is_end() { return self.clone(); }
       self.digit = self.mapping.base - 1;
-      let mut one = false;
-      if let Some(ref mut bx) = self.left {
-        if bx.is_one() {
-          one = true;
-        } else {
-          bx.pred_till_zero();
-        }
-      };
-      if one { self.left = None; }
+      match self.left.clone() {
+        Some(ref mut bx) => self.set_left(bx.pred_till_zero(), false),
+        None => self.left = None
+      }
     } else {
       self.digit -= 1;
     }
@@ -398,8 +401,8 @@ impl<'a> Digits<'a> {
   pub fn replicate(self) -> Self { self.clone() }
 
   // logic for setting left linked list continuation
-  fn set_left(&mut self, d: Digits<'a>) {
-    if d.is_end() {
+  fn set_left(&mut self, d: Digits<'a>, trim: bool) {
+    if trim && d.is_end() {
       self.left = None;
     } else {
       self.left = Some(Box::new(d));
@@ -409,7 +412,7 @@ impl<'a> Digits<'a> {
   /// Plus one.
   pub fn succ(&mut self) -> Self {
     let one = self.one();
-    self.mut_add(one)
+    self.mut_add_internal(one, false)
   }
 
   /// Gives the full value of all digits within the linked list as a String.
@@ -458,11 +461,12 @@ impl<'a,'b> From<(&'a BaseCustom<char>, Digits<'b>)> for Digits<'a> {
         Some(bx) => {
           let (h, t) = bx.head_tail();
           if h != 0 { // speed optimization
-            result.mut_add(
+            result.mut_add_internal(
               Digits::new(mapping, mapping.gen(h)).mul(
                 Digits::new(mapping, mapping.gen(from_base)).
                   pow(Digits::new(mapping, mapping.gen(position)))
-              )
+              ),
+              true
             );
           }
           position += 1;

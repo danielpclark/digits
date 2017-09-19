@@ -17,6 +17,7 @@ This package lets you invent your own numeric systems and perform basic math on 
 * multiplication
 * multiply by powers of
 * and simple +1/-1 steps with `succ` and `pred_till_zero`
+* as of version 0.3 Digits preserves zero padding
 
 You may consider this a highly advanced score card flipper (character sequences) with basic
 math methods added to help progress through sequences as you would like.
@@ -26,7 +27,7 @@ math methods added to help progress through sequences as you would like.
 Add the following to your Cargo.toml file
 ```toml
 [dependencies]
-digits = "^0.1"
+digits = "^0.3"
 ```
 
 To include it for usage add
@@ -84,9 +85,9 @@ hundred.zero() // A Digits instance with the value of 0
 
 // Count down or up with `pred_till_zero` and `succ`
 let mut ten = Digits::new(&base10, "10".to_string());
-assert_eq!(ten.pred_till_zero().to_s(), "9");
-assert_eq!(ten.pred_till_zero().to_s(), "8");
-assert_eq!(ten.pred_till_zero().to_s(), "7");
+assert_eq!(ten.pred_till_zero().to_s(), "09");
+assert_eq!(ten.pred_till_zero().to_s(), "08");
+assert_eq!(ten.pred_till_zero().to_s(), "07");
 
 let mut nine = Digits::new(&base10, "9".to_string());
 assert_eq!(nine.succ().to_s(), "10");
