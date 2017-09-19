@@ -17,7 +17,7 @@ This package lets you invent your own numeric systems and perform basic math on 
 * multiplication
 * multiply by powers of
 * and simple +1/-1 steps with `succ` and `pred_till_zero`
-* as of version 0.3 Digits preserves zero padding
+* as of version 0.3 Digits preserves zero padding for addition methods
 
 You may consider this a highly advanced score card flipper (character sequences) with basic
 math methods added to help progress through sequences as you would like.
