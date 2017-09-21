@@ -2,6 +2,46 @@ extern crate digits;
 use digits::{BaseCustom,Digits};
 
 #[test]
+fn it_zero_fills() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num = Digits::new(&base10, "".to_string());
+  num.zero_fill(4);
+  assert_eq!(num.to_s(), "0000".to_string());
+
+  let mut num = Digits::new(&base10, "1".to_string());
+  num.zero_fill(4);
+  assert_eq!(num.to_s(), "0001".to_string());
+
+  let mut num = Digits::new(&base10, "012".to_string());
+  num.zero_fill(4);
+  assert_eq!(num.to_s(), "0012".to_string());
+
+  let mut num = Digits::new(&base10, "12345".to_string());
+  num.zero_fill(4);
+  assert_eq!(num.to_s(), "12345".to_string());
+}
+
+#[test]
+fn it_trims_zeros() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num = Digits::new(&base10, "0000".to_string());
+  num.zero_trim();
+  assert_eq!(num.to_s(), "0".to_string());
+
+  let mut num = Digits::new(&base10, "0001".to_string());
+  num.zero_trim();
+  assert_eq!(num.to_s(), "1".to_string());
+
+  let mut num = Digits::new(&base10, "0012".to_string());
+  num.zero_trim();
+  assert_eq!(num.to_s(), "12".to_string());
+
+  let mut num = Digits::new(&base10, "12345".to_string());
+  num.zero_trim();
+  assert_eq!(num.to_s(), "12345".to_string());
+}
+
+#[test]
 fn normal_addition_preserves_zero_padding(){
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let mut num1 = Digits::new(&base10, "0001".to_string());

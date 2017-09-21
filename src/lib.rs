@@ -433,6 +433,40 @@ impl<'a> Digits<'a> {
   pub fn zero(&self) -> Self {
     Digits::new_zero(self.mapping)
   }
+
+  /// Zero fills the left of the current number up to a total character length.
+  pub fn zero_fill(&mut self, length: usize) {
+    if self.length() >= length { return; }
+    if length == 0 { return; }
+    match self.left.clone() {
+      None => {
+        let mut l = self.zero();
+        l.zero_fill(length - 1);
+        self.left = Some(Box::new(l));
+      }
+      Some(v) => {
+        self.set_left(
+          {
+            let mut l = v.replicate();
+            l.zero_fill(length -1 );
+            l
+          },
+          false
+        )
+      }
+    }
+  }
+
+  /// Zero fills the left of the current number up to a total character length.
+  pub fn zero_trim(&mut self) {
+    let mut lnum: String = "".to_string();
+    if let Some(ref v) = self.left {
+      lnum = v.to_s();
+    }
+    lnum = lnum.trim_left_matches(self.mapping.zero().clone()).to_string();
+    let lval = self.propagate(lnum);
+    self.set_left(lval, true);
+  }
 }
 
 #[allow(missing_docs)]
