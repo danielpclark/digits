@@ -36,8 +36,7 @@ pub struct Digits<'a> {
 }
 
 impl<'a> Digits<'a> {
-  /// Add two Digits instances together. This will panic if the two Digits don't share the same
-  /// numeric base.
+  /// Add two Digits instances together.
   ///
   /// # Example
   ///
@@ -148,8 +147,7 @@ impl<'a> Digits<'a> {
     }
   }
 
-  /// Multiply two Digits instances together.  This will panic if the two Digits don't share the same
-  /// numeric base.
+  /// Multiply two Digits instances together.
   ///
   /// # Example
   ///
@@ -207,8 +205,7 @@ impl<'a> Digits<'a> {
     result
   }
 
-  /// Add two Digits instances together.  This will panic if the two Digits don't share the same
-  /// numeric base.
+  /// Add two Digits instances together.
   ///
   /// # Example
   ///
@@ -261,8 +258,7 @@ impl<'a> Digits<'a> {
     self.clone()
   }
 
-  /// Multiply two Digits instances together.  This will panic if the two Digits don't share the same
-  /// numeric base.
+  /// Multiply two Digits instances together.
   ///
   /// # Example
   ///
