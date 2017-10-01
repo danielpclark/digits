@@ -312,6 +312,19 @@ impl<'a> Digits<'a> {
     }
   }
 
+  /// Create a Digits from a Vector of from zero positional mappings for custom Digits numeric base
+  pub fn new_mapped(&self, places: Vec<usize>) -> Result<Self, &'static str> {
+    if places.iter().any(|&x| x >= self.mapping.base as usize) {
+      return Err("Character mapping out of range!");
+    }
+    let num = places.iter().fold("".to_string(), |mut acc, &x| {
+        acc.push(self.mapping.nth(x).unwrap().clone());
+        acc
+      }
+    );
+    Ok(Digits::new(self.mapping, num))
+  }
+
   /// Creates a new Digits instance with value of one and the provided character mapping.
   pub fn new_one(mapping: &'a BaseCustom<char>) -> Self {
     Digits { mapping: mapping, digit: 1, left: None }
@@ -637,3 +650,19 @@ impl<'a> PartialOrd for Digits<'a> {
     result
   }
 }
+
+// struct DigitsNeighbor(Digits<'a>, i8);
+// 
+// impl Iterator for DigitsNeighbor {
+//   type Item = Digits<'a>;
+// 
+//   #[inline]
+//   fn next(&mut self) -> Digits<'a> {
+//     let start_incrs = vec![1,2,3,11,21];
+//     let suffix = if self.1 == 0 {
+//       vec![3,21]
+//     } else {
+//       vec![1,3,21]
+//     }
+//   }
+// }

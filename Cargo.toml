@@ -15,4 +15,4 @@ categories = ["cryptography", "data-structures"]
 travis-ci = { repository = "danielpclark/digits", branch = "master" }
 
 [dependencies]
-base_custom = "^0.1"
+base_custom = "^0.1.11"
