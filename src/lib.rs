@@ -58,6 +58,7 @@ impl<'a> Digits<'a> {
   /// "13"
   /// ```
   pub fn add(&self, other: Self) -> Self {
+    let other = self.into_base(other);
     self.clone().mut_add_internal(other, false)
   }
 
@@ -86,6 +87,14 @@ impl<'a> Digits<'a> {
     match self.left {
       Some(bx) => (self.digit, Some(bx)),
       None => (self.digit, None),
+    }
+  }
+
+  fn into_base(&self, other: Digits<'a>) -> Self {
+    if self.mapping == other.mapping {
+      other
+    } else {
+      self.gen(other)
     }
   }
 
@@ -166,8 +175,9 @@ impl<'a> Digits<'a> {
 
   // Internal implementation for multiply. Needs the recursive
   // value of powers of ten for addition.
-  fn multiply(&self, other: Self, power_of_ten: usize) -> Self {
-    assert!(self.mapping == other.mapping);
+  fn multiply(&self, other: Digits<'a>, power_of_ten: usize) -> Self {
+    let other = self.into_base(other);
+
     let mut position: usize = power_of_ten;
     let mut o = Some(Box::new(other));
     let mut result = self.zero();
@@ -221,8 +231,9 @@ impl<'a> Digits<'a> {
   pub fn mut_add(&mut self, other: Self) -> Self {
     self.mut_add_internal(other, false)
   }
-  fn mut_add_internal(&mut self, other: Self, trim: bool) -> Self {
-    assert!(self.mapping == other.mapping);
+  fn mut_add_internal(&mut self, other: Digits<'a>, trim: bool) -> Self {
+    let other = self.into_base(other);
+
     if other.is_end() { return self.clone(); };
     let (last, rest) = other.head_tail();
 

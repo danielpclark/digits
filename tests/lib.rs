@@ -65,8 +65,7 @@ fn preserve_zero_padding_decrement(){
 }
 
 #[test]
-#[should_panic]
-fn it_panics_when_add_performed_with_different_bases() {
+fn it_no_longer_panics_when_add_performed_with_different_bases() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let base2 = BaseCustom::<char>::new("01".chars().collect());
   let num1 = Digits::new(&base10, "1".to_string());
@@ -75,8 +74,7 @@ fn it_panics_when_add_performed_with_different_bases() {
 }
 
 #[test]
-#[should_panic]
-fn it_panics_when_mut_add_performed_with_different_bases() {
+fn it_no_longer_panics_when_mut_add_performed_with_different_bases() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let base2 = BaseCustom::<char>::new("01".chars().collect());
   let num1 = Digits::new(&base10, "1".to_string());
@@ -85,8 +83,7 @@ fn it_panics_when_mut_add_performed_with_different_bases() {
 }
 
 #[test]
-#[should_panic]
-fn it_panics_when_mul_performed_with_different_bases() {
+fn it_no_longer_panics_when_mul_performed_with_different_bases() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let base2 = BaseCustom::<char>::new("01".chars().collect());
   let num1 = Digits::new(&base10, "9".to_string());
@@ -95,8 +92,7 @@ fn it_panics_when_mul_performed_with_different_bases() {
 }
 
 #[test]
-#[should_panic]
-fn it_panics_when_mut_mul_performed_with_different_bases() {
+fn it_no_longer_panics_when_mut_mul_performed_with_different_bases() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let base2 = BaseCustom::<char>::new("01".chars().collect());
   let num1 = Digits::new(&base10, "9".to_string());
