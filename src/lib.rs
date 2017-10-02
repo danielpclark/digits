@@ -312,7 +312,27 @@ impl<'a> Digits<'a> {
     }
   }
 
-  /// Create a Digits from a Vector of from zero positional mappings for custom Digits numeric base
+  /// Create a Digits from a Vector of from zero positional mappings for custom Digits numeric
+  /// base.
+  /// 
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base16 = BaseCustom::<char>::new("0123456789abcdef".chars().collect());
+  /// let builder = Digits::new(&base16, "".to_string());
+  /// let num = builder.new_mapped(vec![1,0,2,1]).ok().unwrap();
+  ///
+  /// assert_eq!(num.to_s(), "1021");
+  /// ```
+  ///
+  /// If zero had been Z in the example above the same vector `vec![1,0,2,1]` would have
+  /// produced a Digits instance of a Hex value of "1Z21".  The vector is the litteral positional
+  /// map of the character(s) via an index from zero regardless of numeric base.
+  ///
+  /// If a number provided within the vector is higher than the numeric base size then the method
+  /// will return an `Err(&'static str)` Result.
   pub fn new_mapped(&self, places: Vec<usize>) -> Result<Self, &'static str> {
     if places.iter().any(|&x| x >= self.mapping.base as usize) {
       return Err("Character mapping out of range!");
@@ -651,18 +671,30 @@ impl<'a> PartialOrd for Digits<'a> {
   }
 }
 
-// struct DigitsNeighbor(Digits<'a>, i8);
-// 
-// impl Iterator for DigitsNeighbor {
-//   type Item = Digits<'a>;
-// 
-//   #[inline]
-//   fn next(&mut self) -> Digits<'a> {
-//     let start_incrs = vec![1,2,3,11,21];
-//     let suffix = if self.1 == 0 {
-//       vec![3,21]
-//     } else {
-//       vec![1,3,21]
-//     }
-//   }
-// }
+struct DigitsNeighbor(Digits<'a>, i8);
+
+impl Iterator for DigitsNeighbor {
+  type Item = Digits<'a>;
+
+  #[inline]
+  fn next(&mut self) -> Digits<'a> {
+    let d = self.0;
+    let mut start_incrs = vec![];
+    start_incrs.push(d.new_mapped(vec![21]));
+    start_incrs.push(d.new_mapped(vec![11]));
+    start_incrs.push(d.new_mapped(vec![3]));
+    start_incrs.push(d.new_mapped(vec![2]));
+    start_incrs.push(d.new_mapped(vec![1]));
+    let mut suffix = vec![];
+    suffix.push(d.new_mapped(vec![21]));
+    suffix.push(d.new_mapped(vec![3]));
+    if self.1 > 0 {
+      suffix.push(d.new_mapped(vec![3]));
+    }
+    let mut prefix = vec![];
+    prefix.push(d.new_mapped(vec![10]));
+    prefix.push(d.new_mapped(vec![20]));
+
+    let max_extra_zeros = self.1;
+  }
+}
