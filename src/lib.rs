@@ -855,6 +855,7 @@ pub struct StepMap<'a> {
 impl<'a> StepMap<'a> {
   #[allow(missing_docs)]
   pub fn new(d: Digits<'a>, n: u8) -> Self {
+    assert!(d.mapping.base > 3, "\n\n  WARNING!\n\n  \"You may not use non-adjacent stepping with numeric bases of less than 4!\"\n\n");
     StepMap {
       digits: d,
       base_map: vec![],

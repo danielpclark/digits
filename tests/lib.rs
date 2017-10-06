@@ -1,6 +1,14 @@
 extern crate digits;
 use digits::{BaseCustom,Digits};
 
+#[should_panic]
+#[test]
+fn should_panic_when_base_too_low_for_non_adjacent_stepping() {
+  let base2 = BaseCustom::<char>::new("01".chars().collect());
+  let mut num = Digits::new(&base2, "101010".to_string());
+  assert_eq!(num.next_non_adjacent(0).to_s(), "1010101".to_string());
+}
+
 #[test]
 fn it_avoids_adjacent_characters_in_step() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
