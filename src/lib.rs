@@ -100,6 +100,9 @@ impl<'a> Digits<'a> {
 
   /// Determine if two Digits are compatible for addition or multiplication.
   ///
+  /// _This method is not be required anymore as addition and multiplication
+  /// will perform numeric base conversion if there is a difference._
+  ///
   /// # Example
   ///
   /// ```
@@ -145,6 +148,38 @@ impl<'a> Digits<'a> {
     match &self.left {
       &None => 1,
       &Some(ref l) => { l.length() + 1 }
+    }
+  }
+
+  /// Give the count for the maximum of the same adjacent characters for this digit.
+  ///
+  /// Note that adjacent is a non-inclusive count.  So for 7 numbers it's 1 adjacent
+  /// to 6 which will return 6.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  /// let num = Digits::new(&base10, "557771".to_string());
+  ///
+  /// assert_eq!(num.max_adjacent(), 2);
+  /// ```
+  ///
+  /// The above example demonstrates that there are 2 adjacent 7s next to a 7
+  /// and that is the biggest adjacent set of numbers.
+  pub fn max_adjacent(&self) -> usize {
+    self.max_adj(self.digit, 0, 1) - 1
+  }
+
+  fn max_adj(&self, last_num: u64, last_num_count: usize, max_count: usize) -> usize {
+    let mut lnc = last_num_count;
+    if self.digit == last_num { lnc += 1; } else { lnc = 1; }
+    let max_count = std::cmp::max(lnc, max_count);
+    match &self.left {
+      &None => max_count,
+      &Some(ref l) => { l.max_adj(self.digit, lnc, max_count) },
     }
   }
 
@@ -290,6 +325,17 @@ impl<'a> Digits<'a> {
   ///
   /// The first parameter must be a BaseCustom object which defines and maps all values.
   /// The second parameter is a string value with all valid characters from the BaseCustom set.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  /// let nine = Digits::new(&base10, "9".to_string());
+  ///
+  /// assert_eq!(nine.to_s(), "9");
+  /// ```
   pub fn new<S>(mapping: &'a BaseCustom<char>, number: S) -> Digits<'a>
   where S: Into<String> {
     let number = number.into();
@@ -347,16 +393,78 @@ impl<'a> Digits<'a> {
   }
 
   /// Creates a new Digits instance with value of one and the provided character mapping.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  /// let one = Digits::new_one(&base10);
+  ///
+  /// assert_eq!(one.to_s(), "1");
+  /// ```
   pub fn new_one(mapping: &'a BaseCustom<char>) -> Self {
     Digits { mapping: mapping, digit: 1, left: None }
   }
 
   /// Creates a new Digits instance with value of zero and uses the provided character mapping.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  /// let zero = Digits::new_zero(&base10);
+  ///
+  /// assert_eq!(zero.to_s(), "0");
+  /// ```
   pub fn new_zero(mapping: &'a BaseCustom<char>) -> Self {
     Digits { mapping: mapping, digit: 0, left: None }
   }
 
+  /// Returns the next Digits in incrementing that only allows the given number of
+  /// adjacent number duplicates.
+  /// 
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  /// let mut num = Digits::new(&base10, "98".to_string());
+  ///
+  /// assert_eq!(num.next_non_adjacent(0).to_s(), "101");
+  /// ```
+  pub fn next_non_adjacent(&mut self, adjacent: usize) -> Self {
+    let mut step_map = StepMap::new(self.zero(), adjacent as u8);
+    let mut v: Self;
+    loop {
+      let mut builder = self.clone();
+      v = builder.mut_add(step_map.next().unwrap());
+      if v.max_adjacent() == adjacent {
+        break;
+      }
+    }
+    self.digit = v.digit;
+    self.left = v.left;
+    self.clone()
+  }
+
   /// Creates a new Digits instance with value of one and uses the current character mapping.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  /// let nine = Digits::new(&base10, "9".to_string());
+  /// let one = nine.one();
+  ///
+  /// assert_eq!(one.to_s(), "1");
+  /// ```
   pub fn one(&self) -> Self {
     Digits::new_one(self.mapping)
   }
@@ -433,6 +541,18 @@ impl<'a> Digits<'a> {
   /// Creates a new Digits instance with the internal character set and given value.
   ///
   /// The parameter is a string value with all valid characters from the BaseCustom set.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  /// let nine = Digits::new(&base10, "9".to_string());
+  /// let forty_two = nine.propagate("42".to_string());
+  ///
+  /// assert_eq!(forty_two.to_s(), "42");
+  /// ```
   pub fn propagate<S>(&self, number: S) -> Self
   where S: Into<String> {
     Digits::new(self.mapping, number)
@@ -488,11 +608,35 @@ impl<'a> Digits<'a> {
   }
 
   /// Creates a new Digits instance with value of zero and the current character mapping.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  /// let nine = Digits::new(&base10, "9".to_string());
+  /// let zero = nine.zero();
+  ///
+  /// assert_eq!(zero.to_s(), "0");
+  /// ```
   pub fn zero(&self) -> Self {
     Digits::new_zero(self.mapping)
   }
 
   /// Zero fills the left of the current number up to a total character length.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  /// let mut nine = Digits::new(&base10, "9".to_string());
+  /// nine.zero_fill(4);
+  ///
+  /// assert_eq!(nine.to_s(), "0009");
+  /// ```
   pub fn zero_fill(&mut self, length: usize) {
     if self.length() >= length { return; }
     if length == 0 { return; }
@@ -515,7 +659,19 @@ impl<'a> Digits<'a> {
     }
   }
 
-  /// Zero fills the left of the current number up to a total character length.
+  /// Zero trims the left of the current number.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  /// let mut nine = Digits::new(&base10, "0009".to_string());
+  /// nine.zero_trim();
+  ///
+  /// assert_eq!(nine.to_s(), "9");
+  /// ```
   pub fn zero_trim(&mut self) {
     let mut lnum: String = "".to_string();
     if let Some(ref v) = self.left {

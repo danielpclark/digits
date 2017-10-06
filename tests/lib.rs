@@ -2,6 +2,41 @@ extern crate digits;
 use digits::{BaseCustom,Digits};
 
 #[test]
+fn it_avoids_adjacent_characters_in_step() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num = Digits::new(&base10, "198".to_string());
+  assert_eq!(num.next_non_adjacent(0).to_s(), "201".to_string());
+  let mut num = Digits::new(&base10, "1098".to_string());
+  assert_eq!(num.next_non_adjacent(0).to_s(), "1201".to_string());
+}
+
+#[test]
+fn it_allows_one_adjacent_character_in_step() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num = Digits::new(&base10, "998".to_string());
+  assert_eq!(num.next_non_adjacent(1).to_s(), "1001".to_string());
+  let mut num = Digits::new(&base10, "99899".to_string());
+  assert_eq!(num.next_non_adjacent(1).to_s(), "100100".to_string());
+}
+
+#[test]
+fn it_allows_two_adjacent_characters_in_step() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num = Digits::new(&base10, "9998".to_string());
+  assert_eq!(num.next_non_adjacent(2).to_s(), "10001".to_string());
+  let mut num = Digits::new(&base10, "9998999".to_string());
+  assert_eq!(num.next_non_adjacent(2).to_s(), "10001000".to_string());
+}
+
+#[test]
+fn it_counts_maximum_adjacent_characters() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let builder = Digits::new(&base10, "".to_string());
+  let num = builder.new_mapped(vec![1,0,5,5,5,5,5,5,5,2,1,1,1,1]).ok().unwrap();
+  assert_eq!(num.max_adjacent(), 6); // 7 - 1
+}
+
+#[test]
 fn it_right_counts_character_base_index_matches() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let builder = Digits::new(&base10, "".to_string());
