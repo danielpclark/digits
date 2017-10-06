@@ -45,7 +45,7 @@ impl<'a> Digits<'a> {
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
-  /// let mut eleven = Digits::new(&base10, "11".to_string());
+  /// let eleven = Digits::new(&base10, "11".to_string());
   /// let two = Digits::new(&base10, "2".to_string());
   ///
   /// assert_eq!(eleven.add(two).to_s(), "13");
@@ -191,7 +191,7 @@ impl<'a> Digits<'a> {
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
-  /// let mut eleven = Digits::new(&base10, "11".to_string());
+  /// let eleven = Digits::new(&base10, "11".to_string());
   /// let two = Digits::new(&base10, "2".to_string());
   ///
   /// assert_eq!(eleven.mul(two).to_s(), "22");
