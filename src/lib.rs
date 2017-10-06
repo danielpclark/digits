@@ -425,6 +425,8 @@ impl<'a> Digits<'a> {
 
   /// Returns the next Digits in incrementing that only allows the given number of
   /// adjacent number duplicates.
+  ///
+  /// _This will panic! if numeric base is less than 4._
   /// 
   /// # Example
   ///
