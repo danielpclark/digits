@@ -910,10 +910,9 @@ impl<'a> Iterator for StepMap<'a> {
             let mut count = 0;
             let mut i = v.iter().rev();
             loop {
-              if i.next() == Some(&0) {
-                count += 1                
-              } else {
-                break
+              match i.next() {
+                Some(&0) => { count += 1 },
+                _ => break,
               }
             }
             count
