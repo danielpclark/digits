@@ -7,9 +7,8 @@
 //
 #![deny(missing_docs,trivial_casts,trivial_numeric_casts,
         missing_debug_implementations, missing_copy_implementations,
-        unsafe_code,unused_import_braces,unused_qualifications)
+        unsafe_code,unstable_features,unused_import_braces,unused_qualifications)
 ]
-#![feature(slice_patterns)]
 //! # digits
 //!
 //! The digits crate is a linked list implementation of a score card flipper.  But
@@ -876,17 +875,20 @@ impl<'a> Iterator for StepMap<'a> {
     match self.base_map.len() {
       0 => next_map = vec![1],
       1 => {
-        match self.base_map.as_slice() {
-          &[1] => next_map = vec![2],
-          &[2] => next_map = vec![3],
-          &[3] => next_map = vec![1,1],
+        match self.base_map[0].clone() {
+          1 => next_map = vec![2],
+          2 => next_map = vec![3],
+          3 => next_map = vec![1,1],
           _ => unreachable!(),
         }
       },
       2 => {
-        match self.base_map.as_slice() {
-          &[1,1] => next_map = vec![2,1],
-          &[2,1] => {
+        match (
+            self.base_map[0].clone(),
+            self.base_map[1].clone()
+          ) {
+          (1,1) => next_map = vec![2,1],
+          (2,1) => {
             if self.limit == 0 {
               next_map = vec![1,0,3]
             } else {
@@ -917,8 +919,11 @@ impl<'a> Iterator for StepMap<'a> {
             count
           };
 
-          match self.base_map[self.base_map.len()-2..self.base_map.len()].to_vec().as_slice() {
-            &[0,1] => {
+          match (
+              self.base_map[self.base_map.len()-2].clone(),
+              self.base_map[self.base_map.len()-1].clone()
+            ) {
+            (0,1) => {
               next_map.pop();
               if end_zero_qty(&next_map) < self.limit + 1 {
                 next_map.push(0);
@@ -929,12 +934,12 @@ impl<'a> Iterator for StepMap<'a> {
                 next_map.push(3);
               }
             },
-            &[0,3] => {
+            (0,3) => {
               next_map.pop();
               next_map.push(2);
               next_map.push(1);
             },
-            &[2,1] => {
+            (2,1) => {
               // build tower of multiples of 20
               // but first max zeros before appending 20
               // then if zeros are max use 3; else 1 on end
