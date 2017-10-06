@@ -7,8 +7,9 @@
 //
 #![deny(missing_docs,trivial_casts,trivial_numeric_casts,
         missing_debug_implementations, missing_copy_implementations,
-        unsafe_code,unstable_features,unused_import_braces,unused_qualifications)
+        unsafe_code,unused_import_braces,unused_qualifications)
 ]
+#![feature(slice_patterns)]
 //! # digits
 //!
 //! The digits crate is a linked list implementation of a score card flipper.  But
@@ -437,6 +438,23 @@ impl<'a> Digits<'a> {
     Digits::new(self.mapping, number)
   }
 
+  /// Right count of digits character index.
+  ///
+  /// Returns a `usize` of how many Digits values from the right
+  /// match the BaseCustom index given for number.
+  pub fn rcount(&self, character_index: u8) -> usize {
+    if let Some(ref d) = self.left {
+      if self.digit == character_index as u64 {
+        return d.rcount(character_index) + 1;
+      }
+    } else{
+      if self.digit == character_index as u64 {
+        return 1;
+      }
+    }
+    0
+  }
+
   /// An alias for `clone`. _Useful for unboxing._
   pub fn replicate(self) -> Self { self.clone() }
 
@@ -671,30 +689,121 @@ impl<'a> PartialOrd for Digits<'a> {
   }
 }
 
-struct DigitsNeighbor(Digits<'a>, i8);
+#[allow(missing_docs)]
+#[derive(Debug)]
+pub struct StepMap<'a> {
+  digits: Digits<'a>,
+  base_map: Vec<usize>,
+  limit: u8,
+}
 
-impl Iterator for DigitsNeighbor {
+impl<'a> StepMap<'a> {
+  #[allow(missing_docs)]
+  pub fn new(d: Digits<'a>, n: u8) -> Self {
+    StepMap {
+      digits: d,
+      base_map: vec![],
+      limit: n,
+    }
+  }
+}
+
+extern crate array_tool;
+use array_tool::vec::Shift;
+
+impl<'a> Iterator for StepMap<'a> {
   type Item = Digits<'a>;
 
   #[inline]
-  fn next(&mut self) -> Digits<'a> {
-    let d = self.0;
-    let mut start_incrs = vec![];
-    start_incrs.push(d.new_mapped(vec![21]));
-    start_incrs.push(d.new_mapped(vec![11]));
-    start_incrs.push(d.new_mapped(vec![3]));
-    start_incrs.push(d.new_mapped(vec![2]));
-    start_incrs.push(d.new_mapped(vec![1]));
-    let mut suffix = vec![];
-    suffix.push(d.new_mapped(vec![21]));
-    suffix.push(d.new_mapped(vec![3]));
-    if self.1 > 0 {
-      suffix.push(d.new_mapped(vec![3]));
-    }
-    let mut prefix = vec![];
-    prefix.push(d.new_mapped(vec![10]));
-    prefix.push(d.new_mapped(vec![20]));
+  fn next(&mut self) -> Option<Digits<'a>> {
+    let mut next_map: Vec<usize>;
+    match self.base_map.len() {
+      0 => next_map = vec![1],
+      1 => {
+        match self.base_map.as_slice() {
+          &[1] => next_map = vec![2],
+          &[2] => next_map = vec![3],
+          &[3] => next_map = vec![1,1],
+          _ => unreachable!(),
+        }
+      },
+      2 => {
+        match self.base_map.as_slice() {
+          &[1,1] => next_map = vec![2,1],
+          &[2,1] => {
+            if self.limit == 0 {
+              next_map = vec![1,0,3]
+            } else {
+              next_map = vec![1,0,1]
+            }
+          },
+          _ => unreachable!(),
+        }
+      },
+      _ => {
+        // if one then two
+        if self.base_map[0] == 1 { 
+          next_map = self.base_map[1..self.base_map.len()].to_vec();
+          next_map.unshift(2);
+        } else { // if two then tail and one
+          next_map = self.base_map.clone();
 
-    let max_extra_zeros = self.1;
+          let end_zero_qty = |v: &Vec<usize>| {
+            let mut count = 0;
+            let mut i = v.iter().rev();
+            loop {
+              if i.next() == Some(&0) {
+                count += 1                
+              } else {
+                break
+              }
+            }
+            count
+          };
+
+          match self.base_map[self.base_map.len()-2..self.base_map.len()].to_vec().as_slice() {
+            &[0,1] => {
+              next_map.pop();
+              if end_zero_qty(&next_map) < self.limit + 1 {
+                next_map.push(0);
+              }
+              if end_zero_qty(&next_map) < self.limit + 1 {
+                next_map.push(1);
+              } else {
+                next_map.push(3);
+              }
+            },
+            &[0,3] => {
+              next_map.pop();
+              next_map.push(2);
+              next_map.push(1);
+            },
+            &[2,1] => {
+              // build tower of multiples of 20
+              // but first max zeros before appending 20
+              // then if zeros are max use 3; else 1 on end
+              next_map.pop();
+              next_map.pop();
+              if end_zero_qty(&next_map) == self.limit + 1 {
+                next_map.push(2);
+                next_map.push(0);
+              } else {
+                next_map.push(0);
+              }
+              if self.limit == 0 {
+                next_map.push(3);
+              } else {
+                next_map.push(1);
+              }
+            },
+            _ => unreachable!(),
+          }
+          next_map.shift();
+          next_map.unshift(1);
+        }
+      },
+    }
+    self.base_map = next_map;
+    Some(self.digits.new_mapped(self.base_map.clone()).ok().unwrap())
   }
 }

@@ -2,7 +2,15 @@ extern crate digits;
 use digits::{BaseCustom,Digits};
 
 #[test]
-fn it_mapps_to_correct_from_zero_numeric_chars(){
+fn it_right_counts_character_base_index_matches() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let builder = Digits::new(&base10, "".to_string());
+  let num = builder.new_mapped(vec![1,0,2,1,1,1,1]).ok().unwrap();
+  assert_eq!(num.rcount(1), 4);
+}
+
+#[test]
+fn it_mapps_to_correct_from_zero_numeric_chars() {
   let base16 = BaseCustom::<char>::new("0123456789abcdef".chars().collect());
   let builder = Digits::new(&base16, "".to_string());
   let num = builder.new_mapped(vec![1,0,2,1]).ok().unwrap();
@@ -10,7 +18,7 @@ fn it_mapps_to_correct_from_zero_numeric_chars(){
 }
 
 #[test]
-fn it_errs_correctly_for_max_map_range(){
+fn it_errs_correctly_for_max_map_range() {
   let base16 = BaseCustom::<char>::new("0123456789abcdef".chars().collect());
   let builder = Digits::new(&base16, "".to_string());
   let num = builder.new_mapped(vec![15]).ok().unwrap();
