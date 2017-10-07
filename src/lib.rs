@@ -25,8 +25,10 @@ use std::ops::{
 };
 use std::cmp::{PartialOrd,Ordering};
 
-/// This struct acts similar to a full number with a custom numeric character base.
-/// But the underlying implementation is a linked list where all the methods recurse
+/// This struct acts similar to a full number with a custom numeric character base
+/// which is provided and mapped via a BaseCustom instance.
+///
+/// The underlying implementation for Digits is a linked list where all the methods recurse
 /// as far as need to to implement the operations.
 #[derive(Clone)]
 pub struct Digits<'a> {
@@ -97,10 +99,8 @@ impl<'a> Digits<'a> {
     }
   }
 
-  /// Determine if two Digits are compatible for addition or multiplication.
-  ///
-  /// _This method is not be required anymore as addition and multiplication
-  /// will perform numeric base conversion if there is a difference._
+  /// Returns whether the two Digits instances have the same numeric base and
+  /// character mapping.
   ///
   /// # Example
   ///
@@ -563,6 +563,23 @@ impl<'a> Digits<'a> {
   ///
   /// Returns a `usize` of how many Digits values from the right
   /// match the BaseCustom index given for number.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("ABC3456789".chars().collect());
+  /// let num = Digits::new(&base10, "34BBB".to_string());
+  ///
+  /// assert_eq!(num.rcount(1), 3);
+  /// ```
+  ///
+  /// # Output
+  ///
+  /// ```text
+  /// 3
+  /// ```
   pub fn rcount(&self, character_index: u8) -> usize {
     if let Some(ref d) = self.left {
       if self.digit == character_index as u64 {
