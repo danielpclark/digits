@@ -449,7 +449,7 @@ impl<'a> Digits<'a> {
     loop {
       let mut builder = self.clone();
       v = builder.mut_add(step_map.next().unwrap());
-      if v.max_adjacent() == adjacent {
+      if v.max_adjacent() <= adjacent {
         break;
       }
     }

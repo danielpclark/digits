@@ -30,6 +30,8 @@ fn it_allows_one_adjacent_character_in_step() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let mut num = Digits::new(&base10, "998".to_string());
   assert_eq!(num.next_non_adjacent(1).to_s(), "1001".to_string());
+  let mut num = Digits::new(&base10, "1009".to_string());
+  assert_eq!(num.next_non_adjacent(1).to_s(), "1010".to_string());
   let mut num = Digits::new(&base10, "99899".to_string());
   assert_eq!(num.next_non_adjacent(1).to_s(), "100100".to_string());
 }
