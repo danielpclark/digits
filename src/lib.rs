@@ -63,6 +63,11 @@ impl<'a> Digits<'a> {
     self.clone().mut_add_internal(other, false)
   }
 
+  /// Make numeric base size publicly available on Digits
+  pub fn base(&self) -> usize {
+    self.mapping.base as usize
+  }
+
   /// Allows you to generate/encode a Digits from a `u64` or other `Digits` even if they are of a
   /// different numeric base.
   ///

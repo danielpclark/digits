@@ -1,6 +1,13 @@
 extern crate digits;
 use digits::{BaseCustom,Digits};
 
+#[test]
+fn it_shows_the_base_size() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let num = Digits::new(&base10, "".to_string());
+  assert_eq!(num.base(), 10);
+}
+
 #[should_panic]
 #[test]
 fn should_panic_when_base_too_low_for_non_adjacent_stepping() {
