@@ -1,6 +1,20 @@
 extern crate digits;
 use digits::{BaseCustom,Digits};
 
+
+#[test]
+fn zero_fill_edge_case_for_minimal_adjacent_stepping() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num = Digits::new(&base10, "0000".to_string());
+  assert_eq!(num.next_non_adjacent(1).to_s(), "0010".to_string());
+  let mut num = Digits::new(&base10, "2222".to_string());
+  assert_eq!(num.next_non_adjacent(1).to_s(), "2230".to_string());
+  let mut num = Digits::new(&base10, "9999".to_string());
+  assert_eq!(num.next_non_adjacent(1).to_s(), "10010".to_string());
+  let mut num = Digits::new(&base10, "55555".to_string());
+  assert_eq!(num.next_non_adjacent(1).to_s(), "55600".to_string());
+}
+
 #[test]
 fn it_shows_the_base_size() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
