@@ -63,6 +63,18 @@ impl<'a> Digits<'a> {
     self.clone().mut_add_internal(other, false)
   }
 
+  /// Returns a vector of each cahracters position mapping
+  pub fn as_mapping_vec(&self) -> Vec<u64> {
+    match &self.left {
+      &Some(ref l) => {
+        let mut result = l.as_mapping_vec();
+        result.extend(vec![self.digit]);
+        result
+      },
+      &None => vec![self.digit],
+    }
+  }
+
   /// Make numeric base size publicly available on Digits
   pub fn base(&self) -> usize {
     self.mapping.base as usize

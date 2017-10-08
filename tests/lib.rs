@@ -1,6 +1,12 @@
 extern crate digits;
 use digits::{BaseCustom,Digits};
 
+#[test]
+fn as_mapping_result() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let num = Digits::new(&base10, "0123456789".to_string());
+  assert_eq!(num.as_mapping_vec(), vec![0,1,2,3,4,5,6,7,8,9]);
+}
 
 #[test]
 fn zero_fill_edge_case_for_minimal_adjacent_stepping() {
