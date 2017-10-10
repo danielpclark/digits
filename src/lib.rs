@@ -575,58 +575,59 @@ impl<'a> Digits<'a> {
   /// For convenience you may just use `next_non_adjacent` instead of prep and step.
   pub fn prep_non_adjacent(&mut self, adjacent: usize) -> Self {
     assert!(self.mapping.base > 3, "\n\n  WARNING!\n\n  \"You may not use non-adjacent stepping with numeric bases of less than 4!\"\n\n");
-    if self.max_adjacent() > adjacent {
-      let mut v = self.as_mapping_vec();
-      'outer: loop {
-        let mut last_num: Option<u64> = None;
-        let mut last_num_count = 0;
-        let w = v.clone();
-        let itr = w.iter().enumerate();
 
-        println!("v is: {:?}", v);
-
-        for (i, item) in itr {
-          if last_num == None {
-            last_num = Some(item.clone());
-            continue;
-          }
-
-          if let Some(val) = last_num {
-            if item == &val {
-              last_num_count += 1;
-            } else {
-              last_num_count = 0;
-            }
-
-            if last_num_count > adjacent {
-              let i = i + 1;
-              let mut d = self.new_mapped(v[0..i].to_vec()).ok().unwrap();
-              d.succ();
-              let mut new_v = d.as_mapping_vec();
-              println!("d: {}, i: {}, self: {}", d.to_s(), i, self.to_s());
-
-              println!("slice: {:?}", v[i..v.len()].to_vec());
-              for _ in v[i..v.len()].iter() {
-                new_v.push(0)
-              }
-              println!("new_v: {:?}", new_v);
-
-              v = new_v;
-              continue 'outer;
-            }
-          }
-          
-          last_num = Some(item.clone());
-        }
-        break;
-      }
-      let result = self.new_mapped(v).ok().unwrap().pred_till_zero();
-      self.digit = result.digit;
-      self.left = result.left.clone();
-      result
-    } else {
-      self.clone()
+    if self.max_adjacent() <= adjacent {
+      return self.clone();
     }
+
+    let mut v = self.as_mapping_vec();
+    'outer: loop {
+      let mut last_num: Option<u64> = None;
+      let mut last_num_count = 0;
+      let w = v.clone();
+      let itr = w.iter().enumerate();
+
+      println!("v is: {:?}", v);
+
+      for (i, item) in itr {
+        if last_num == None {
+          last_num = Some(item.clone());
+          continue;
+        }
+
+        if let Some(val) = last_num {
+          if item == &val {
+            last_num_count += 1;
+          } else {
+            last_num_count = 0;
+          }
+
+          if last_num_count > adjacent {
+            let i = i + 1;
+            let mut d = self.new_mapped(v[0..i].to_vec()).ok().unwrap();
+            d.succ();
+            let mut new_v = d.as_mapping_vec();
+            println!("d: {}, i: {}, self: {}", d.to_s(), i, self.to_s());
+
+            println!("slice: {:?}", v[i..v.len()].to_vec());
+            for _ in v[i..v.len()].iter() {
+              new_v.push(0)
+            }
+            println!("new_v: {:?}", new_v);
+
+            v = new_v;
+            continue 'outer;
+          }
+        }
+        
+        last_num = Some(item.clone());
+      }
+      break;
+    }
+    let result = self.new_mapped(v).ok().unwrap().pred_till_zero();
+    self.digit = result.digit;
+    self.left = result.left.clone();
+    result
   }
 
   /// Creates a new Digits instance with the internal character set and given value.
