@@ -63,6 +63,18 @@ impl<'a> Digits<'a> {
     self.clone().mut_add_internal(other, false)
   }
 
+  /// Returns a vector of each characters position mapping
+  pub fn as_mapping_vec(&self) -> Vec<u64> {
+    match &self.left {
+      &Some(ref l) => {
+        let mut result = l.as_mapping_vec();
+        result.extend(vec![self.digit]);
+        result
+      },
+      &None => vec![self.digit],
+    }
+  }
+
   /// Make numeric base size publicly available on Digits
   pub fn base(&self) -> usize {
     self.mapping.base as usize
@@ -384,12 +396,12 @@ impl<'a> Digits<'a> {
   ///
   /// If a number provided within the vector is higher than the numeric base size then the method
   /// will return an `Err(&'static str)` Result.
-  pub fn new_mapped(&self, places: Vec<usize>) -> Result<Self, &'static str> {
-    if places.iter().any(|&x| x >= self.mapping.base as usize) {
+  pub fn new_mapped(&self, places: Vec<u64>) -> Result<Self, &'static str> {
+    if places.iter().any(|&x| x >= self.mapping.base) {
       return Err("Character mapping out of range!");
     }
     let num = places.iter().fold("".to_string(), |mut acc, &x| {
-        acc.push(self.mapping.nth(x).unwrap().clone());
+        acc.push(self.mapping.nth(x as usize).unwrap().clone());
         acc
       }
     );
@@ -444,18 +456,8 @@ impl<'a> Digits<'a> {
   /// assert_eq!(num.next_non_adjacent(0).to_s(), "101");
   /// ```
   pub fn next_non_adjacent(&mut self, adjacent: usize) -> Self {
-    let mut step_map = StepMap::new(self.zero(), adjacent as u8);
-    let mut v: Self;
-    loop {
-      let mut builder = self.clone();
-      v = builder.mut_add(step_map.next().unwrap());
-      if v.max_adjacent() <= adjacent {
-        break;
-      }
-    }
-    self.digit = v.digit;
-    self.left = v.left;
-    self.clone()
+    self.prep_non_adjacent(adjacent);
+    self.step_non_adjacent(adjacent)
   }
 
   /// Creates a new Digits instance with value of one and uses the current character mapping.
@@ -544,6 +546,90 @@ impl<'a> Digits<'a> {
     self.clone()
   }
 
+  /// Sometimes given starting Digits have more adjacent characters than is desired
+  /// when proceeding with non-adjacent steps.  This method provides a valid initial
+  /// state for `step_non_adjacent`'s algorithm to not miss any initial steps.
+  /// 
+  /// _This method is used internally for `next_non_adjacent`.
+  ///
+  /// _This will panic! if numeric base is less than 4._
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  /// let mut num = Digits::new(&base10, "0003".to_string());
+  ///
+  /// assert_eq!(num.prep_non_adjacent(1).to_s(), "0009");
+  /// ```
+  ///
+  /// In the example above the prep moves to a valid state of "0010" and then
+  /// minuses one to "0009" so that `step_non_adjacent` will add 1 and return to the
+  /// valid state of "0010" for this one-adjacent scenario.
+  ///
+  /// For performance in your own applications use this method once and continue iterating
+  /// with `step_non_adjacent`.
+  ///
+  /// For convenience you may just use `next_non_adjacent` instead of prep and step.
+  pub fn prep_non_adjacent(&mut self, adjacent: usize) -> Self {
+    assert!(self.mapping.base > 3, "\n\n  WARNING!\n\n  \"You may not use non-adjacent stepping with numeric bases of less than 4!\"\n\n");
+
+    if self.max_adjacent() <= adjacent {
+      return self.clone();
+    }
+
+    let mut v = self.as_mapping_vec();
+    'outer: loop {
+      let mut last_num: Option<u64> = None;
+      let mut last_num_count = 0;
+      let w = v.clone();
+      let itr = w.iter().enumerate();
+
+      println!("v is: {:?}", v);
+
+      for (i, item) in itr {
+        if last_num == None {
+          last_num = Some(item.clone());
+          continue;
+        }
+
+        if let Some(val) = last_num {
+          if item == &val {
+            last_num_count += 1;
+          } else {
+            last_num_count = 0;
+          }
+
+          if last_num_count > adjacent {
+            let i = i + 1;
+            let mut d = self.new_mapped(v[0..i].to_vec()).ok().unwrap();
+            d.succ();
+            let mut new_v = d.as_mapping_vec();
+            println!("d: {}, i: {}, self: {}", d.to_s(), i, self.to_s());
+
+            println!("slice: {:?}", v[i..v.len()].to_vec());
+            for _ in v[i..v.len()].iter() {
+              new_v.push(0)
+            }
+            println!("new_v: {:?}", new_v);
+
+            v = new_v;
+            continue 'outer;
+          }
+        }
+        
+        last_num = Some(item.clone());
+      }
+      break;
+    }
+    let result = self.new_mapped(v).ok().unwrap().pred_till_zero();
+    self.digit = result.digit;
+    self.left = result.left.clone();
+    result
+  }
+
   /// Creates a new Digits instance with the internal character set and given value.
   ///
   /// The parameter is a string value with all valid characters from the BaseCustom set.
@@ -608,6 +694,40 @@ impl<'a> Digits<'a> {
     } else {
       self.left = Some(Box::new(d));
     }
+  }
+
+  /// Returns the next Digits in incrementing that only allows the given number of
+  /// adjacent number duplicates.
+  ///
+  /// _This will panic! if numeric base is less than 4._
+  ///
+  /// **NOTE:** _This assumes the starting state is valid for given non adjacent characters.
+  /// If you want to ensure this please use prep_adjacent before this, or just use
+  /// `next_non_adjacent` to handle them both._
+  /// 
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  /// let mut num = Digits::new(&base10, "98".to_string());
+  ///
+  /// assert_eq!(num.step_non_adjacent(0).to_s(), "101");
+  /// ```
+  pub fn step_non_adjacent(&mut self, adjacent: usize) -> Self {
+    let mut step_map = StepMap::new(self.zero(), adjacent as u8);
+    let mut v: Self;
+    loop {
+      let mut builder = self.clone();
+      v = builder.mut_add(step_map.next().unwrap());
+      if v.max_adjacent() <= adjacent {
+        break;
+      }
+    }
+    self.digit = v.digit;
+    self.left = v.left;
+    self.clone()
   }
 
   /// Plus one.
@@ -872,7 +992,7 @@ impl<'a> PartialOrd for Digits<'a> {
 #[derive(Debug)]
 pub struct StepMap<'a> {
   digits: Digits<'a>,
-  base_map: Vec<usize>,
+  base_map: Vec<u64>,
   limit: u8,
 }
 
@@ -896,7 +1016,7 @@ impl<'a> Iterator for StepMap<'a> {
 
   #[inline]
   fn next(&mut self) -> Option<Digits<'a>> {
-    let mut next_map: Vec<usize>;
+    let mut next_map: Vec<u64>;
     match self.base_map.len() {
       0 => next_map = vec![1],
       1 => {
@@ -931,7 +1051,7 @@ impl<'a> Iterator for StepMap<'a> {
         } else { // if two then tail and one
           next_map = self.base_map.clone();
 
-          let end_zero_qty = |v: &Vec<usize>| {
+          let end_zero_qty = |v: &Vec<u64>| {
             let mut count = 0;
             let mut i = v.iter().rev();
             loop {

@@ -2,6 +2,44 @@ extern crate digits;
 use digits::{BaseCustom,Digits};
 
 #[test]
+fn it_preps_one_adjacent_character_in_prep_non_adjacent() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num = Digits::new(&base10, "0008".to_string());
+  assert_eq!(num.prep_non_adjacent(1).to_s(), "0009".to_string());
+  let mut num = Digits::new(&base10, "0000".to_string());
+  assert_eq!(num.prep_non_adjacent(1).to_s(), "0009".to_string());
+  let mut num = Digits::new(&base10, "9999".to_string());
+  assert_eq!(num.prep_non_adjacent(1).to_s(), "10009".to_string());
+}
+
+#[test]
+fn it_allows_one_adjacent_character_in_step_non_adjacent() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num = Digits::new(&base10, "009".to_string());
+  assert_eq!(num.step_non_adjacent(1).to_s(), "010".to_string());
+}
+
+#[test]
+fn as_mapping_result() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let num = Digits::new(&base10, "0123456789".to_string());
+  assert_eq!(num.as_mapping_vec(), vec![0,1,2,3,4,5,6,7,8,9]);
+}
+
+#[test]
+fn zero_fill_edge_case_for_minimal_adjacent_stepping() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num = Digits::new(&base10, "0000".to_string());
+  assert_eq!(num.next_non_adjacent(1).to_s(), "0010".to_string());
+  let mut num = Digits::new(&base10, "2222".to_string());
+  assert_eq!(num.next_non_adjacent(1).to_s(), "2230".to_string());
+  let mut num = Digits::new(&base10, "9999".to_string());
+  assert_eq!(num.next_non_adjacent(1).to_s(), "10010".to_string());
+  let mut num = Digits::new(&base10, "55555".to_string());
+  assert_eq!(num.next_non_adjacent(1).to_s(), "55600".to_string());
+}
+
+#[test]
 fn it_shows_the_base_size() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let num = Digits::new(&base10, "".to_string());
@@ -316,6 +354,8 @@ fn it_succs() {
   assert_eq!(nine.succ().to_s(), "10");
   assert_eq!(nine.succ().to_s(), "11");
   assert_eq!(nine.succ().to_s(), "12");
+  let mut nines = Digits::new(&base10, "9999".to_string());
+  assert_eq!(nines.succ().to_s(), "10000");
 }
 
 #[test]
