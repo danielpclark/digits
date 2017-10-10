@@ -116,6 +116,35 @@ impl<'a> Digits<'a> {
     }
   }
 
+  /// Returns true of false based on whether the limit of allowed adjacents is not exceeded.
+  /// Early termination result when false.
+  ///
+  /// Same as being a more efficient `self.max_adjacent <= allowed_adjacent`.
+  pub fn is_valid_adjacent(&self, adjacent: usize) -> bool {
+    let mut ptr = self;
+    let mut last_num = self.digit;
+    let mut last_num_count = 0;
+    loop {
+      match &ptr.left {
+        &Some(ref item) => {
+          if item.digit == last_num {
+            last_num_count += 1;
+          } else {
+            last_num_count = 0;
+          }
+
+          if last_num_count > adjacent { return false; }
+          last_num = item.digit;
+          ptr = item;
+        },
+        &None => {
+          break;
+        },
+      }
+    }
+    true
+  }
+
   /// Returns whether the two Digits instances have the same numeric base and
   /// character mapping.
   ///
@@ -576,7 +605,7 @@ impl<'a> Digits<'a> {
   pub fn prep_non_adjacent(&mut self, adjacent: usize) -> Self {
     assert!(self.mapping.base > 3, "\n\n  WARNING!\n\n  \"You may not use non-adjacent stepping with numeric bases of less than 4!\"\n\n");
 
-    if self.max_adjacent() <= adjacent {
+    if self.is_valid_adjacent(adjacent) {
       return self.clone();
     }
 
@@ -586,8 +615,6 @@ impl<'a> Digits<'a> {
       let mut last_num_count = 0;
       let w = v.clone();
       let itr = w.iter().enumerate();
-
-      println!("v is: {:?}", v);
 
       for (i, item) in itr {
         if last_num == None {
@@ -607,13 +634,10 @@ impl<'a> Digits<'a> {
             let mut d = self.new_mapped(v[0..i].to_vec()).ok().unwrap();
             d.succ();
             let mut new_v = d.as_mapping_vec();
-            println!("d: {}, i: {}, self: {}", d.to_s(), i, self.to_s());
 
-            println!("slice: {:?}", v[i..v.len()].to_vec());
             for _ in v[i..v.len()].iter() {
               new_v.push(0)
             }
-            println!("new_v: {:?}", new_v);
 
             v = new_v;
             continue 'outer;
@@ -721,7 +745,7 @@ impl<'a> Digits<'a> {
     loop {
       let mut builder = self.clone();
       v = builder.mut_add(step_map.next().unwrap());
-      if v.max_adjacent() <= adjacent {
+      if v.is_valid_adjacent(adjacent) {
         break;
       }
     }

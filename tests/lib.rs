@@ -2,6 +2,19 @@ extern crate digits;
 use digits::{BaseCustom,Digits};
 
 #[test]
+fn is_adjacent_limit() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let num = Digits::new(&base10, "0008".to_string());
+  assert_eq!(num.is_valid_adjacent(0), false);
+  assert_eq!(num.is_valid_adjacent(1), false);
+  assert_eq!(num.is_valid_adjacent(2), true);
+  let num = Digits::new(&base10, "998".to_string());
+  assert_eq!(num.is_valid_adjacent(0), false);
+  assert_eq!(num.is_valid_adjacent(1), true);
+  assert_eq!(num.is_valid_adjacent(2), true);
+}
+
+#[test]
 fn it_preps_one_adjacent_character_in_prep_non_adjacent() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let mut num = Digits::new(&base10, "0008".to_string());
