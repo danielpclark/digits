@@ -2,6 +2,21 @@ extern crate digits;
 use digits::{BaseCustom,Digits};
 
 #[test]
+fn is_will_reverse() {
+  use digits::Reverse;
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let mut num = Digits::new(&base10, "0008".to_string());
+  num.reverse();
+  assert_eq!(num.to_s(), "8000");
+  let mut num = Digits::new(&base10, "998".to_string());
+  num.reverse();
+  assert_eq!(num.to_s(), "899");
+  let mut num = Digits::new(&base10, "5000".to_string());
+  num.reverse();
+  assert_eq!(num.to_s(), "0005");
+}
+
+#[test]
 fn is_adjacent_limit() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let num = Digits::new(&base10, "0008".to_string());

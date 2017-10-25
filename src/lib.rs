@@ -850,6 +850,49 @@ impl<'a> Digits<'a> {
   }
 }
 
+/// Reverse mutates self into a reversed self.
+pub trait Reverse {
+  /// # Example
+  ///
+  /// ```
+  /// use digits::{BaseCustom,Digits,Reverse};
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  /// let mut nine = Digits::new(&base10, "0009".to_string());
+  ///
+  /// nine.reverse();
+  ///
+  /// assert_eq!(nine.to_s(), "9000");
+  /// ```
+  fn reverse(&mut self);
+}
+
+impl<'a> Reverse for Digits<'a> {
+  fn reverse(&mut self) {
+    let mut curr_node: Option<Digits<'a>> = Some(self.clone());
+    let mut prev_node: Option<Digits<'a>> = None;
+
+    while curr_node != None {
+      let cn = curr_node.unwrap();
+      let next_node = if let Some(n) = cn.clone().left {
+        Some(n.replicate())
+      } else { None };
+      let mut c = cn;
+      if let Some(prev) = prev_node {
+        c.set_left(prev, false);
+      } else {
+        c.left = None;
+      }
+      prev_node = Some(c);
+      curr_node = next_node;
+    }
+
+    let p = prev_node.unwrap();
+    self.digit = p.digit;
+    self.left = p.left;
+  }
+}
+
 #[allow(missing_docs)]
 pub trait Into<String> {
   fn into(self) -> String;
