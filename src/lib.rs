@@ -912,25 +912,46 @@ impl From<(BaseCustom<char>, Digits)> for Digits {
     let source = d.1;
     let from_base = source.mapping.base;
     let mut result = Digits::new_zero(mapping.clone());
-    let mut pointer: Option<Box<Digits>> = Some(Box::new(source));
+    let mut pointer: Option<Box<Digits>> = Some(Box::new(source.clone()));
     let mut position = 0;
-    loop {
-      match pointer {
-        Some(bx) => {
-          let (h, t) = bx.head_tail();
-          if h != 0 { // speed optimization
-            result.mut_add_internal(
-              Digits::new(mapping.clone(), mapping.gen(h)).mul(
-                Digits::new(mapping.clone(), mapping.gen(from_base)).
-                  pow(Digits::new(mapping.clone(), mapping.gen(position)))
-              ),
-              true
-            );
-          }
-          position += 1;
-          pointer = t;
-        },
-        None => break,
+    // Down-Casting
+    if from_base >= mapping.base {
+      loop {
+        match pointer {
+          Some(bx) => {
+            let (h, t) = bx.head_tail();
+            if h != 0 { // speed optimization
+              result.mut_add_internal(
+                Digits::new(mapping.clone(), mapping.gen(h)).mul(
+                  Digits::new(mapping.clone(), mapping.gen(from_base)).
+                    pow(source.gen(position))
+                ),
+                true
+              );
+            }
+            position += 1;
+            pointer = t;
+          },
+          None => break,
+        }
+      }
+    } else { // Up-Casting
+      loop {
+        match pointer {
+          Some(bx) => {
+            let (h, t) = bx.head_tail();
+            if h != 0 { // speed optimization
+              result.mut_add_internal(
+                // This implementation is limited by the max of usize
+                Digits::new(mapping.clone(), mapping.gen(h * from_base.pow(position as u32))),
+                true
+              );
+            }
+            position += 1;
+            pointer = t;
+          },
+          None => break,
+        }
       }
     }
     result
@@ -1192,5 +1213,60 @@ impl Default for Digits {
   fn default() -> Digits {
     let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
     Digits::new_zero(base10)
+  }
+}
+
+#[allow(missing_docs)]
+pub mod radices {
+  use super::*;
+  pub fn binary_base() -> BaseCustom<char> {
+    BaseCustom::<char>::new("01".chars().collect())
+  }
+
+  pub fn octal_base() -> BaseCustom<char> {
+    BaseCustom::<char>::new("01234567".chars().collect())
+  }
+
+  pub fn decimal_base() -> BaseCustom<char> {
+    BaseCustom::<char>::new("0123456789".chars().collect())
+  }
+
+  pub fn hex_base() -> BaseCustom<char> {
+    BaseCustom::<char>::new("0123456789ABCDEF".chars().collect())
+  }
+
+  pub fn hexl_base() -> BaseCustom<char> {
+    BaseCustom::<char>::new("0123456789abcdef".chars().collect())
+  }
+}
+
+#[allow(missing_docs)]
+pub trait Radix {
+  fn binary(&self)  -> Self;
+  fn octal(&self)   -> Self;
+  fn decimal(&self) -> Self;
+  fn hex(&self)     -> Self;
+  fn hexl(&self)    -> Self;
+}
+
+impl Radix for Digits {
+  fn binary(&self) -> Digits {
+    Digits::from((radices::binary_base(), self.clone()))
+  }
+
+  fn octal(&self) -> Digits {
+    Digits::from((radices::octal_base(), self.clone()))
+  }
+
+  fn decimal(&self) -> Digits {
+    Digits::from((radices::decimal_base(), self.clone()))
+  }
+
+  fn hex(&self) -> Digits {
+    Digits::from((radices::hex_base(), self.clone()))
+  }
+
+  fn hexl(&self) -> Digits {
+    Digits::from((radices::hexl_base(), self.clone()))
   }
 }

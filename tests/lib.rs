@@ -585,3 +585,31 @@ fn it_can_tell_which_digits_is_larger_equal_length_big() {
   assert_eq!(small <= big, true);
   assert_eq!(small >= big, false);
 }
+
+#[test]
+fn hex_math() {
+  let zhex = Digits::new_zero(digits::radices::hex_base());
+  assert_eq!(zhex.gen(16).to_s(), "10");
+  let one_decimal = Digits::new_one(digits::radices::decimal_base());
+  assert_eq!((zhex.gen(9) + one_decimal).to_s(), "A")
+}
+
+#[test]
+fn radix_conversion_with_defaults() {
+  use digits::Radix;
+  let zero: Digits = Default::default();
+  let two = zero.gen(2);
+  assert_eq!(two.binary().to_s(), "10");
+  assert_eq!(two.binary().base(), 2);
+  let eight = zero.gen(8);
+  assert_eq!(eight.octal().to_s(), "10");
+  assert_eq!(eight.octal().base(), 8);
+  let ten = zero.gen(10);
+  assert_eq!(ten.decimal().to_s(), "10");
+  assert_eq!(ten.decimal().base(), 10);
+  let fifteen = zero.gen(15);
+  assert_eq!(fifteen.hex().to_s(), "F");
+  assert_eq!(fifteen.hex().base(), 16);
+  assert_eq!(fifteen.hexl().to_s(), "f");
+  assert_eq!(fifteen.hexl().base(), 16);
+}
