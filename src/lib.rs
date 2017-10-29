@@ -914,23 +914,44 @@ impl<'a,'b> From<(&'a BaseCustom<char>, Digits<'b>)> for Digits<'a> {
     let mut result = Digits::new_zero(mapping);
     let mut pointer: Option<Box<Digits<'b>>> = Some(Box::new(source));
     let mut position = 0;
-    loop {
-      match pointer {
-        Some(bx) => {
-          let (h, t) = bx.head_tail();
-          if h != 0 { // speed optimization
-            result.mut_add_internal(
-              Digits::new(mapping, mapping.gen(h)).mul(
-                Digits::new(mapping, mapping.gen(from_base)).
-                  pow(Digits::new(mapping, mapping.gen(position)))
-              ),
-              true
-            );
-          }
-          position += 1;
-          pointer = t;
-        },
-        None => break,
+    // Down-Casting
+    if from_base >= mapping.base {
+      loop {
+        match pointer {
+          Some(bx) => {
+            let (h, t) = bx.head_tail();
+            if h != 0 { // speed optimization
+              result.mut_add_internal(
+                Digits::new(&mapping, mapping.gen(h)).mul(
+                  Digits::new(&mapping, mapping.gen(from_base)).
+                    pow(Digits::new(&mapping, mapping.gen(position)))
+                ),
+                true
+              );
+            }
+            position += 1;
+            pointer = t;
+          },
+          None => break,
+        }
+      }
+    } else { // Up-Casting
+      loop {
+        match pointer {
+          Some(bx) => {
+            let (h, t) = bx.head_tail();
+            if h != 0 { // speed optimization
+              result.mut_add_internal(
+                // This implementation is limited by the max of usize
+                Digits::new(&mapping, mapping.gen(h * from_base.pow(position as u32))),
+                true
+              );
+            }
+            position += 1;
+            pointer = t;
+          },
+          None => break,
+        }
       }
     }
     result

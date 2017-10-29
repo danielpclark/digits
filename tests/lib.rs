@@ -2,6 +2,14 @@ extern crate digits;
 use digits::{BaseCustom,Digits};
 
 #[test]
+fn up_casting() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let base16 = BaseCustom::<char>::new("0123456789ABCDEF".chars().collect());
+  let fifteen = Digits::new(&base10, "15".to_string());
+  assert_eq!(Digits::from((&base16, fifteen)).to_s(), "F");
+}
+
+#[test]
 fn is_will_reverse() {
   use digits::Reverse;
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
