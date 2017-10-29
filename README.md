@@ -34,7 +34,7 @@ To include it for usage add
 
 ```rust
 extern crate digits;
-use digits::{BaseCustom,Digits};
+use digits::prelude::*;
 ```
 
 to your file.

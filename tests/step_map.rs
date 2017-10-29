@@ -1,5 +1,6 @@
 extern crate digits;
-use digits::{BaseCustom,Digits,StepMap};
+use digits::prelude::*;
+use digits::StepMap;
 
 #[test]
 fn it_produces_correct_steps_for_zero_neighbors_in_base4(){

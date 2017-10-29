@@ -1,5 +1,5 @@
 extern crate digits;
-use digits::{BaseCustom,Digits};
+use digits::prelude::*;
 
 #[test]
 fn is_will_reverse() {
@@ -317,6 +317,13 @@ fn it_can_provide_one() {
   assert_eq!(num.one().pinky(), 'B');
   let one = Digits::new_one(base3);
   assert_eq!(one.pinky(), 'B');
+}
+
+#[test]
+fn default_produces_base_ten_of_zero() {
+  let zero: Digits = Default::default();
+  assert_eq!(zero.is_zero(), true);
+  assert_eq!(zero.gen(10).to_s(), "10".to_string());
 }
 
 #[test]

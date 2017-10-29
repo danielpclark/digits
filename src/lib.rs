@@ -43,7 +43,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
@@ -86,7 +86,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
@@ -151,7 +151,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
@@ -204,7 +204,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   /// let num = Digits::new(base10, "557771".to_string());
@@ -233,7 +233,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
@@ -291,7 +291,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
@@ -344,7 +344,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
@@ -374,7 +374,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   /// let nine = Digits::new(base10, "9".to_string());
@@ -410,7 +410,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base16 = BaseCustom::<char>::new("0123456789abcdef".chars().collect());
   /// let builder = Digits::new(base16, "".to_string());
@@ -442,7 +442,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   /// let one = Digits::new_one(base10);
@@ -458,7 +458,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   /// let zero = Digits::new_zero(base10);
@@ -477,7 +477,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   /// let mut num = Digits::new(base10, "98".to_string());
@@ -494,7 +494,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   /// let nine = Digits::new(base10, "9".to_string());
@@ -519,7 +519,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
@@ -586,7 +586,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   /// let mut num = Digits::new(base10, "0003".to_string());
@@ -661,7 +661,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   /// let nine = Digits::new(base10, "9".to_string());
@@ -682,7 +682,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("ABC3456789".chars().collect());
   /// let num = Digits::new(base10, "34BBB".to_string());
@@ -732,7 +732,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   /// let mut num = Digits::new(base10, "98".to_string());
@@ -779,7 +779,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   /// let nine = Digits::new(base10, "9".to_string());
@@ -796,7 +796,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   /// let mut nine = Digits::new(base10, "9".to_string());
@@ -831,7 +831,7 @@ impl Digits {
   /// # Example
   ///
   /// ```
-  /// use digits::{BaseCustom,Digits};
+  /// use digits::prelude::*;
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   /// let mut nine = Digits::new(base10, "0009".to_string());
@@ -1177,5 +1177,20 @@ impl Iterator for StepMap {
     }
     self.base_map = next_map;
     Some(self.digits.new_mapped(self.base_map.clone()).ok().unwrap())
+  }
+}
+
+#[allow(missing_docs)]
+pub mod prelude {
+  #[doc(inline)]
+  pub use super::Digits;
+  #[doc(inline)]
+  pub use base_custom::BaseCustom;
+}
+
+impl Default for Digits {
+  fn default() -> Digits {
+    let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+    Digits::new_zero(base10)
   }
 }
