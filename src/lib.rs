@@ -31,13 +31,13 @@ use std::cmp::{PartialOrd,Ordering};
 /// The underlying implementation for Digits is a linked list where all the methods recurse
 /// as far as need to to implement the operations.
 #[derive(Clone)]
-pub struct Digits<'a> {
-  mapping: &'a BaseCustom<char>,
+pub struct Digits {
+  mapping: BaseCustom<char>,
   digit: u64,
-  left: Option<Box<Digits<'a>>>,
+  left: Option<Box<Digits>>,
 }
 
-impl<'a> Digits<'a> {
+impl Digits {
   /// Add two Digits instances together.
   ///
   /// # Example
@@ -47,8 +47,8 @@ impl<'a> Digits<'a> {
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
-  /// let eleven = Digits::new(&base10, "11".to_string());
-  /// let two = Digits::new(&base10, "2".to_string());
+  /// let eleven = Digits::new(base10.clone(), "11".to_string());
+  /// let two = Digits::new(base10, "2".to_string());
   ///
   /// assert_eq!(eleven.add(two).to_s(), "13");
   /// ```
@@ -90,14 +90,14 @@ impl<'a> Digits<'a> {
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
-  /// let two = Digits::new(&base10, "2".to_string());
+  /// let two = Digits::new(base10, "2".to_string());
   /// let three = two.gen(3_u64);
   ///
   /// assert_eq!(three.to_s(), "3");
   /// ```
   pub fn gen<T>(&self, other: T) -> Self
-  where Self: From<(&'a BaseCustom<char>, T)> {
-    Digits::from((self.mapping, other))
+  where Self: From<(BaseCustom<char>, T)> {
+    Digits::from((self.mapping.clone(), other))
   }
 
   // the way to recurse and process Digits
@@ -108,7 +108,7 @@ impl<'a> Digits<'a> {
     }
   }
 
-  fn into_base(&self, other: Digits<'a>) -> Self {
+  fn into_base(&self, other: Digits) -> Self {
     if self.mapping == other.mapping {
       other
     } else {
@@ -155,8 +155,8 @@ impl<'a> Digits<'a> {
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
-  /// let two = Digits::new(&base10, "2".to_string());
-  /// let three = Digits::new(&base10, "3".to_string());
+  /// let two = Digits::new(base10.clone(), "2".to_string());
+  /// let three = Digits::new(base10, "3".to_string());
   ///
   /// assert!(two.is_compat(&three));
   /// ```
@@ -207,7 +207,7 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  /// let num = Digits::new(&base10, "557771".to_string());
+  /// let num = Digits::new(base10, "557771".to_string());
   ///
   /// assert_eq!(num.max_adjacent(), 2);
   /// ```
@@ -237,8 +237,8 @@ impl<'a> Digits<'a> {
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
-  /// let eleven = Digits::new(&base10, "11".to_string());
-  /// let two = Digits::new(&base10, "2".to_string());
+  /// let eleven = Digits::new(base10.clone(), "11".to_string());
+  /// let two = Digits::new(base10, "2".to_string());
   ///
   /// assert_eq!(eleven.mul(two).to_s(), "22");
   /// ```
@@ -254,7 +254,7 @@ impl<'a> Digits<'a> {
 
   // Internal implementation for multiply. Needs the recursive
   // value of powers of ten for addition.
-  fn multiply(&self, other: Digits<'a>, power_of_ten: usize) -> Self {
+  fn multiply(&self, other: Digits, power_of_ten: usize) -> Self {
     let other = self.into_base(other);
 
     let mut position: usize = power_of_ten;
@@ -295,8 +295,8 @@ impl<'a> Digits<'a> {
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
-  /// let mut eleven = Digits::new(&base10, "11".to_string());
-  /// let two = Digits::new(&base10, "2".to_string());
+  /// let mut eleven = Digits::new(base10.clone(), "11".to_string());
+  /// let two = Digits::new(base10, "2".to_string());
   ///
   /// assert_eq!(eleven.mut_add(two).to_s(), "13");
   /// ```
@@ -309,7 +309,7 @@ impl<'a> Digits<'a> {
   pub fn mut_add(&mut self, other: Self) -> Self {
     self.mut_add_internal(other, false)
   }
-  fn mut_add_internal(&mut self, other: Digits<'a>, trim: bool) -> Self {
+  fn mut_add_internal(&mut self, other: Digits, trim: bool) -> Self {
     let other = self.into_base(other);
 
     if other.is_end() { return self.clone(); };
@@ -321,7 +321,7 @@ impl<'a> Digits<'a> {
     self.digit = l;
 
     // sums for left
-    let mut intermediate = Digits::new_zero(self.mapping);
+    let mut intermediate = Digits::new_zero(self.mapping.clone());
     if let Some(dg) = r { intermediate.mut_add_internal(dg.replicate(), trim); }
     if let Some(dg) = rest { intermediate.mut_add_internal(dg.replicate(), trim); }
 
@@ -348,8 +348,8 @@ impl<'a> Digits<'a> {
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
-  /// let mut eleven = Digits::new(&base10, "11".to_string());
-  /// let two = Digits::new(&base10, "2".to_string());
+  /// let mut eleven = Digits::new(base10.clone(), "11".to_string());
+  /// let two = Digits::new(base10, "2".to_string());
   ///
   /// assert_eq!(eleven.mut_mul(two).to_s(), "22");
   /// ```
@@ -377,11 +377,11 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  /// let nine = Digits::new(&base10, "9".to_string());
+  /// let nine = Digits::new(base10, "9".to_string());
   ///
   /// assert_eq!(nine.to_s(), "9");
   /// ```
-  pub fn new<S>(mapping: &'a BaseCustom<char>, number: S) -> Digits<'a>
+  pub fn new<S>(mapping: BaseCustom<char>, number: S) -> Digits
   where S: Into<String> {
     let number = number.into();
     if number.is_empty() { return Digits { mapping: mapping, digit: 0, left: None }; };
@@ -394,11 +394,11 @@ impl<'a> Digits<'a> {
       if rest.is_empty() {
         None
       } else {
-        Some(Box::new(Digits::new(&mapping, rest)))
+        Some(Box::new(Digits::new(mapping.clone(), rest)))
       }
     };
     Digits {
-      mapping: mapping,
+      mapping: mapping.clone(),
       digit: mapping.decimal(last.to_string()),
       left: continuation,
     }
@@ -413,7 +413,7 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base16 = BaseCustom::<char>::new("0123456789abcdef".chars().collect());
-  /// let builder = Digits::new(&base16, "".to_string());
+  /// let builder = Digits::new(base16, "".to_string());
   /// let num = builder.new_mapped(vec![1,0,2,1]).ok().unwrap();
   ///
   /// assert_eq!(num.to_s(), "1021");
@@ -434,7 +434,7 @@ impl<'a> Digits<'a> {
         acc
       }
     );
-    Ok(Digits::new(self.mapping, num))
+    Ok(Digits::new(self.mapping.clone(), num))
   }
 
   /// Creates a new Digits instance with value of one and the provided character mapping.
@@ -445,11 +445,11 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  /// let one = Digits::new_one(&base10);
+  /// let one = Digits::new_one(base10);
   ///
   /// assert_eq!(one.to_s(), "1");
   /// ```
-  pub fn new_one(mapping: &'a BaseCustom<char>) -> Self {
+  pub fn new_one(mapping: BaseCustom<char>) -> Self {
     Digits { mapping: mapping, digit: 1, left: None }
   }
 
@@ -461,11 +461,11 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  /// let zero = Digits::new_zero(&base10);
+  /// let zero = Digits::new_zero(base10);
   ///
   /// assert_eq!(zero.to_s(), "0");
   /// ```
-  pub fn new_zero(mapping: &'a BaseCustom<char>) -> Self {
+  pub fn new_zero(mapping: BaseCustom<char>) -> Self {
     Digits { mapping: mapping, digit: 0, left: None }
   }
 
@@ -480,7 +480,7 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  /// let mut num = Digits::new(&base10, "98".to_string());
+  /// let mut num = Digits::new(base10, "98".to_string());
   ///
   /// assert_eq!(num.next_non_adjacent(0).to_s(), "101");
   /// ```
@@ -497,13 +497,13 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  /// let nine = Digits::new(&base10, "9".to_string());
+  /// let nine = Digits::new(base10, "9".to_string());
   /// let one = nine.one();
   ///
   /// assert_eq!(one.to_s(), "1");
   /// ```
   pub fn one(&self) -> Self {
-    Digits::new_one(self.mapping)
+    Digits::new_one(self.mapping.clone())
   }
 
   /// The “pinky” is the smallest digit
@@ -523,8 +523,8 @@ impl<'a> Digits<'a> {
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   ///
-  /// let mut eleven = Digits::new(&base10, "11".to_string());
-  /// let two = Digits::new(&base10, "2".to_string());
+  /// let mut eleven = Digits::new(base10.clone(), "11".to_string());
+  /// let two = Digits::new(base10, "2".to_string());
   ///
   /// assert_eq!(eleven.pow(two).to_s(), "121");
   /// ```
@@ -554,7 +554,7 @@ impl<'a> Digits<'a> {
     let mut result: Digits = self.clone();
     for _ in 0..positions {
       let original = result;
-      result = Digits::new_zero(self.mapping);
+      result = Digits::new_zero(self.mapping.clone());
       result.set_left(original, true);
     }
     result
@@ -589,7 +589,7 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  /// let mut num = Digits::new(&base10, "0003".to_string());
+  /// let mut num = Digits::new(base10, "0003".to_string());
   ///
   /// assert_eq!(num.prep_non_adjacent(1).to_s(), "0009");
   /// ```
@@ -664,14 +664,14 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  /// let nine = Digits::new(&base10, "9".to_string());
+  /// let nine = Digits::new(base10, "9".to_string());
   /// let forty_two = nine.propagate("42".to_string());
   ///
   /// assert_eq!(forty_two.to_s(), "42");
   /// ```
   pub fn propagate<S>(&self, number: S) -> Self
   where S: Into<String> {
-    Digits::new(self.mapping, number)
+    Digits::new(self.mapping.clone(), number)
   }
 
   /// Right count of digits character index.
@@ -685,7 +685,7 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("ABC3456789".chars().collect());
-  /// let num = Digits::new(&base10, "34BBB".to_string());
+  /// let num = Digits::new(base10, "34BBB".to_string());
   ///
   /// assert_eq!(num.rcount(1), 3);
   /// ```
@@ -712,7 +712,7 @@ impl<'a> Digits<'a> {
   pub fn replicate(self) -> Self { self.clone() }
 
   // logic for setting left linked list continuation
-  fn set_left(&mut self, d: Digits<'a>, trim: bool) {
+  fn set_left(&mut self, d: Digits, trim: bool) {
     if trim && d.is_end() {
       self.left = None;
     } else {
@@ -735,7 +735,7 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  /// let mut num = Digits::new(&base10, "98".to_string());
+  /// let mut num = Digits::new(base10, "98".to_string());
   ///
   /// assert_eq!(num.step_non_adjacent(0).to_s(), "101");
   /// ```
@@ -782,13 +782,13 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  /// let nine = Digits::new(&base10, "9".to_string());
+  /// let nine = Digits::new(base10, "9".to_string());
   /// let zero = nine.zero();
   ///
   /// assert_eq!(zero.to_s(), "0");
   /// ```
   pub fn zero(&self) -> Self {
-    Digits::new_zero(self.mapping)
+    Digits::new_zero(self.mapping.clone())
   }
 
   /// Zero fills the left of the current number up to a total character length.
@@ -799,7 +799,7 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  /// let mut nine = Digits::new(&base10, "9".to_string());
+  /// let mut nine = Digits::new(base10, "9".to_string());
   /// nine.zero_fill(4);
   ///
   /// assert_eq!(nine.to_s(), "0009");
@@ -834,7 +834,7 @@ impl<'a> Digits<'a> {
   /// use digits::{BaseCustom,Digits};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  /// let mut nine = Digits::new(&base10, "0009".to_string());
+  /// let mut nine = Digits::new(base10, "0009".to_string());
   /// nine.zero_trim();
   ///
   /// assert_eq!(nine.to_s(), "9");
@@ -858,7 +858,7 @@ pub trait Reverse {
   /// use digits::{BaseCustom,Digits,Reverse};
   ///
   /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  /// let mut nine = Digits::new(&base10, "0009".to_string());
+  /// let mut nine = Digits::new(base10, "0009".to_string());
   ///
   /// nine.reverse();
   ///
@@ -867,10 +867,10 @@ pub trait Reverse {
   fn reverse(&mut self);
 }
 
-impl<'a> Reverse for Digits<'a> {
+impl Reverse for Digits {
   fn reverse(&mut self) {
-    let mut curr_node: Option<Digits<'a>> = Some(self.clone());
-    let mut prev_node: Option<Digits<'a>> = None;
+    let mut curr_node: Option<Digits> = Some(self.clone());
+    let mut prev_node: Option<Digits> = None;
 
     while curr_node != None {
       let cn = curr_node.unwrap();
@@ -898,21 +898,21 @@ pub trait Into<String> {
   fn into(self) -> String;
 }
 
-impl<'a> From<(&'a BaseCustom<char>, u64)> for Digits<'a> {
-  fn from(d: (&'a BaseCustom<char>, u64)) -> Digits<'a> {
+impl From<(BaseCustom<char>, u64)> for Digits {
+  fn from(d: (BaseCustom<char>, u64)) -> Digits {
     let mapping = d.0;
     let value = d.1;
-    Digits::new(mapping, mapping.gen(value))
+    Digits::new(mapping.clone(), mapping.gen(value))
   }
 }
 
-impl<'a,'b> From<(&'a BaseCustom<char>, Digits<'b>)> for Digits<'a> {
-  fn from(d: (&'a BaseCustom<char>, Digits<'b>)) -> Digits<'a> {
+impl From<(BaseCustom<char>, Digits)> for Digits {
+  fn from(d: (BaseCustom<char>, Digits)) -> Digits {
     let mapping = d.0;
     let source = d.1;
     let from_base = source.mapping.base;
-    let mut result = Digits::new_zero(mapping);
-    let mut pointer: Option<Box<Digits<'b>>> = Some(Box::new(source));
+    let mut result = Digits::new_zero(mapping.clone());
+    let mut pointer: Option<Box<Digits>> = Some(Box::new(source));
     let mut position = 0;
     loop {
       match pointer {
@@ -920,9 +920,9 @@ impl<'a,'b> From<(&'a BaseCustom<char>, Digits<'b>)> for Digits<'a> {
           let (h, t) = bx.head_tail();
           if h != 0 { // speed optimization
             result.mut_add_internal(
-              Digits::new(mapping, mapping.gen(h)).mul(
-                Digits::new(mapping, mapping.gen(from_base)).
-                  pow(Digits::new(mapping, mapping.gen(position)))
+              Digits::new(mapping.clone(), mapping.gen(h)).mul(
+                Digits::new(mapping.clone(), mapping.gen(from_base)).
+                  pow(Digits::new(mapping.clone(), mapping.gen(position)))
               ),
               true
             );
@@ -937,19 +937,19 @@ impl<'a,'b> From<(&'a BaseCustom<char>, Digits<'b>)> for Digits<'a> {
   }
 }
 
-impl<'a,'b> From<(Digits<'a>, Digits<'b>)> for Digits<'a> {
-  fn from(d: (Digits<'a>, Digits<'b>)) -> Digits<'a> {
+impl From<(Digits, Digits)> for Digits {
+  fn from(d: (Digits, Digits)) -> Digits {
     Digits::from((d.0.mapping, d.1))
   }
 }
 
-impl<'a> From<Digits<'a>> for String {
+impl From<Digits> for String {
   fn from(d: Digits) -> String {
     d.to_s()
   }
 }
 
-impl<'a> Into<String> for Digits<'a> {
+impl Into<String> for Digits {
   fn into(self) -> String {
     self.to_s()
   }
@@ -961,9 +961,9 @@ impl Into<String> for String {
   }
 }
 
-impl<'a> fmt::Display for Digits<'a> {
+impl fmt::Display for Digits {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-   write!(f, "Digits<'a> — (Character: '{}', Decimal Value: {}{})",
+   write!(f, "Digits — (Character: '{}', Decimal Value: {}{})",
      self.mapping.gen(self.digit), self.digit, {
        match self.left {
          None => "".to_string(),
@@ -974,61 +974,61 @@ impl<'a> fmt::Display for Digits<'a> {
   }
 }
 
-impl<'a> fmt::Debug for Digits<'a> {
+impl fmt::Debug for Digits {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{} with base: {:?}", self, self.mapping)
   }
 }
 
-impl<'a> PartialEq for Digits<'a> {
-  fn eq(&self, other: &Digits<'a>) -> bool {
+impl PartialEq for Digits {
+  fn eq(&self, other: &Digits) -> bool {
     self.mapping == other.mapping &&
       self.digit == other.digit &&
       self.left == other.left
   }
 }
 
-impl<'a> Add for Digits<'a> {
+impl Add for Digits {
   type Output = Self;
   fn add(self, other: Self) -> Self {
     self.clone().mut_add(other)
   }
 }
 
-impl<'a> AddAssign for Digits<'a> {
+impl AddAssign for Digits {
   fn add_assign(&mut self, other: Self) {
     self.mut_add(other);
   }
 }
 
-impl<'a> Mul for Digits<'a> {
+impl Mul for Digits {
   type Output = Self;
   fn mul(self, other: Self) -> Self {
     self.multiply(other, 0)
   }
 }
 
-impl<'a> MulAssign for Digits<'a> {
+impl MulAssign for Digits {
   fn mul_assign(&mut self, other: Self) {
     self.mut_mul(other);
   }
 }
 
-impl<'a> BitXor for Digits<'a> {
+impl BitXor for Digits {
   type Output = Self;
   fn bitxor(self, other: Self) -> Self {
     self.clone().pow(other)
   }
 }
 
-impl<'a> BitXorAssign for Digits<'a> {
+impl BitXorAssign for Digits {
   fn bitxor_assign(&mut self, other: Self) {
     self.pow(other);
   }
 }
 
-impl<'a> PartialOrd for Digits<'a> {
-  fn partial_cmp(&self, other: &Digits<'a>) -> Option<Ordering> {
+impl PartialOrd for Digits {
+  fn partial_cmp(&self, other: &Digits) -> Option<Ordering> {
     assert!(self.mapping == other.mapping);
     if self.length() != other.length() {
       return self.length().partial_cmp(&other.length());
@@ -1057,15 +1057,15 @@ impl<'a> PartialOrd for Digits<'a> {
 
 #[allow(missing_docs)]
 #[derive(Debug)]
-pub struct StepMap<'a> {
-  digits: Digits<'a>,
+pub struct StepMap {
+  digits: Digits,
   base_map: Vec<u64>,
   limit: u8,
 }
 
-impl<'a> StepMap<'a> {
+impl StepMap {
   #[allow(missing_docs)]
-  pub fn new(d: Digits<'a>, n: u8) -> Self {
+  pub fn new(d: Digits, n: u8) -> Self {
     assert!(d.mapping.base > 3, "\n\n  WARNING!\n\n  \"You may not use non-adjacent stepping with numeric bases of less than 4!\"\n\n");
     StepMap {
       digits: d,
@@ -1078,11 +1078,11 @@ impl<'a> StepMap<'a> {
 extern crate array_tool;
 use array_tool::vec::Shift;
 
-impl<'a> Iterator for StepMap<'a> {
-  type Item = Digits<'a>;
+impl Iterator for StepMap {
+  type Item = Digits;
 
   #[inline]
-  fn next(&mut self) -> Option<Digits<'a>> {
+  fn next(&mut self) -> Option<Digits> {
     let mut next_map: Vec<u64>;
     match self.base_map.len() {
       0 => next_map = vec![1],

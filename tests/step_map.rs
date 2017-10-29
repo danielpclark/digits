@@ -4,7 +4,7 @@ use digits::{BaseCustom,Digits,StepMap};
 #[test]
 fn it_produces_correct_steps_for_zero_neighbors_in_base4(){
   let base4 = BaseCustom::<char>::new("0123".chars().collect());
-  let num = Digits::new(&base4, "".to_string());
+  let num = Digits::new(base4, "".to_string());
   let mut step_iter = StepMap::new(num, 0);
   assert_eq!(step_iter.next().unwrap().to_s(), "1".to_string());
   assert_eq!(step_iter.next().unwrap().to_s(), "2".to_string());
@@ -43,7 +43,7 @@ fn it_produces_correct_steps_for_zero_neighbors_in_base4(){
 #[test]
 fn it_produces_correct_steps_for_one_neighbor_in_base4(){
   let base4 = BaseCustom::<char>::new("0123".chars().collect());
-  let num = Digits::new(&base4, "".to_string());
+  let num = Digits::new(base4, "".to_string());
   let mut step_iter = StepMap::new(num, 1);
   assert_eq!(step_iter.next().unwrap().to_s(), "1".to_string());
   assert_eq!(step_iter.next().unwrap().to_s(), "2".to_string());
@@ -76,7 +76,7 @@ fn it_produces_correct_steps_for_one_neighbor_in_base4(){
 #[test]
 fn it_produces_correct_steps_for_two_neighbors_in_base4(){
   let base4 = BaseCustom::<char>::new("0123".chars().collect());
-  let num = Digits::new(&base4, "".to_string());
+  let num = Digits::new(base4, "".to_string());
   let mut step_iter = StepMap::new(num, 2);
   assert_eq!(step_iter.next().unwrap().to_s(), "1".to_string());
   assert_eq!(step_iter.next().unwrap().to_s(), "2".to_string());
