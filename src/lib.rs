@@ -1139,36 +1139,46 @@ impl Default for Digits {
   }
 }
 
-#[allow(missing_docs)]
+/// A default Radix modules including most common numeric bases.
 pub mod radices {
   use super::*;
+  /// Binary implementation of BaseCustom
   pub fn binary_base() -> BaseCustom<char> {
     BaseCustom::<char>::new("01".chars().collect())
   }
 
+  /// Octal implementation of BaseCustom
   pub fn octal_base() -> BaseCustom<char> {
     BaseCustom::<char>::new("01234567".chars().collect())
   }
 
+  /// Decimal implementation of BaseCustom
   pub fn decimal_base() -> BaseCustom<char> {
     BaseCustom::<char>::new("0123456789".chars().collect())
   }
 
+  /// Hexadecimal implementation of BaseCustom
   pub fn hex_base() -> BaseCustom<char> {
     BaseCustom::<char>::new("0123456789ABCDEF".chars().collect())
   }
 
+  /// Lowercase hexadecimal implementation of BaseCustom
   pub fn hexl_base() -> BaseCustom<char> {
     BaseCustom::<char>::new("0123456789abcdef".chars().collect())
   }
 }
 
-#[allow(missing_docs)]
+/// Default Radix type conversion for Digits
 pub trait Radix {
+  /// Convert current Digits to binary
   fn binary(&self)  -> Self;
+  /// Convert current Digits to octal
   fn octal(&self)   -> Self;
+  /// Convert current Digits to decimal
   fn decimal(&self) -> Self;
+  /// Convert current Digits to hexadecimal
   fn hex(&self)     -> Self;
+  /// Convert current Digits to lowercase hexadecimal
   fn hexl(&self)    -> Self;
 }
 
