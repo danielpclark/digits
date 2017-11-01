@@ -216,8 +216,9 @@ fn preserve_zero_padding_decrement(){
   assert_eq!(num.pred_till_zero().to_s(), "0999");
 }
 
+#[should_panic]
 #[test]
-fn it_no_longer_panics_when_add_performed_with_different_bases() {
+fn it_panics_when_add_performed_with_different_bases() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let base2 = BaseCustom::<char>::new("01".chars().collect());
   let num1 = Digits::new(base10, "1".to_string());
@@ -225,8 +226,9 @@ fn it_no_longer_panics_when_add_performed_with_different_bases() {
   num1.clone().add(num2.clone());
 }
 
+#[should_panic]
 #[test]
-fn it_no_longer_panics_when_mut_add_performed_with_different_bases() {
+fn it_panics_when_mut_add_performed_with_different_bases() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let base2 = BaseCustom::<char>::new("01".chars().collect());
   let num1 = Digits::new(base10, "1".to_string());
@@ -234,8 +236,9 @@ fn it_no_longer_panics_when_mut_add_performed_with_different_bases() {
   num1.clone().mut_add(num2.clone());
 }
 
+#[should_panic]
 #[test]
-fn it_no_longer_panics_when_mul_performed_with_different_bases() {
+fn it_panics_when_mul_performed_with_different_bases() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let base2 = BaseCustom::<char>::new("01".chars().collect());
   let num1 = Digits::new(base10, "9".to_string());
@@ -243,8 +246,9 @@ fn it_no_longer_panics_when_mul_performed_with_different_bases() {
   assert_eq!(num1.clone().mul(num2.clone()).to_s(), "81");
 }
 
+#[should_panic]
 #[test]
-fn it_no_longer_panics_when_mut_mul_performed_with_different_bases() {
+fn it_panics_when_mut_mul_performed_with_different_bases() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let base2 = BaseCustom::<char>::new("01".chars().collect());
   let num1 = Digits::new(base10, "9".to_string());
@@ -599,7 +603,8 @@ fn hex_math() {
   let zhex = Digits::new_zero(digits::radices::hex_base());
   assert_eq!(zhex.gen(16).to_s(), "10");
   let one_decimal = Digits::new_one(digits::radices::decimal_base());
-  assert_eq!((zhex.gen(9) + one_decimal).to_s(), "A")
+  let converted = Digits::from((zhex.clone(), one_decimal));
+  assert_eq!((zhex.gen(9) + converted).to_s(), "A")
 }
 
 #[test]

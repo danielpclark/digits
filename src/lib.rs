@@ -25,6 +25,11 @@ use std::ops::{
 };
 use std::cmp::{PartialOrd,Ordering};
 
+extern crate array_tool;
+mod internal;
+use internal::step_map::StepMap;
+use internal::carry_add::{CappedAdd,SignNum,Sign};
+
 /// This struct acts similar to a full number with a custom numeric character base
 /// which is provided and mapped via a BaseCustom instance.
 ///
@@ -58,9 +63,45 @@ impl Digits {
   /// ```text
   /// "13"
   /// ```
+  ///
+  /// _This will panic if numeric bases are not the same._
   pub fn add(&self, other: Self) -> Self {
-    let other = self.into_base(other);
-    self.clone().mut_add_internal(other, false)
+    assert!(self.base() == other.base());
+    let mut result: Vec<u64> = vec![];
+
+    let mut carry: u64 = 0;
+
+    let mut c_self: Option<Box<Digits>> = Some(Box::new(self.clone()));
+    let mut o_self: Option<Box<Digits>> = Some(Box::new(other));
+    
+    let mut remainder: Option<SignNum<u64>>;
+    loop {
+      if carry == 0 && c_self == None && o_self == None { break }
+      let cs = c_self.clone();
+      let os = o_self.clone();
+      result.push(
+        {
+          let cr = carry.capped_add({
+            cs.unwrap_or(Box::new(self.zero())).digit +
+            os.unwrap_or(Box::new(self.zero())).digit},
+            (0, self.base() as u64)
+          );
+          remainder = cr.carry;
+          cr.sign_num.num
+        }
+      );
+      let guard = remainder.unwrap_or(SignNum::new(0));
+      match guard.sign {
+        Sign::Plus => {
+          carry = guard.num;
+        },
+        Sign::Minus => unimplemented!()
+      }
+      c_self = c_self.unwrap_or(Box::new(self.zero())).left;
+      o_self = o_self.unwrap_or(Box::new(self.zero())).left;
+    }
+    result.reverse();
+    self.new_mapped(result).unwrap()
   }
 
   /// Returns a vector of each characters position mapping
@@ -108,6 +149,7 @@ impl Digits {
     }
   }
 
+  #[allow(dead_code)]
   fn into_base(&self, other: Digits) -> Self {
     if self.mapping == other.mapping {
       other
@@ -248,6 +290,8 @@ impl Digits {
   /// ```text
   /// "22"
   /// ```
+  ///
+  /// _This will panic if numeric bases are not the same._
   pub fn mul(&self, other: Self) -> Self {
     self.multiply(other, 0)
   }
@@ -255,7 +299,7 @@ impl Digits {
   // Internal implementation for multiply. Needs the recursive
   // value of powers of ten for addition.
   fn multiply(&self, other: Digits, power_of_ten: usize) -> Self {
-    let other = self.into_base(other);
+    assert!(self.base() == other.base());
 
     let mut position: usize = power_of_ten;
     let mut o = Some(Box::new(other));
@@ -306,11 +350,13 @@ impl Digits {
   /// ```text
   /// "13"
   /// ```
+  ///
+  /// _This will panic if numeric bases are not the same._
   pub fn mut_add(&mut self, other: Self) -> Self {
     self.mut_add_internal(other, false)
   }
   fn mut_add_internal(&mut self, other: Digits, trim: bool) -> Self {
-    let other = self.into_base(other);
+    assert!(self.base() == other.base());
 
     if other.is_end() { return self.clone(); };
     let (last, rest) = other.head_tail();
@@ -359,6 +405,8 @@ impl Digits {
   /// ```text
   /// "22"
   /// ```
+  ///
+  /// _This will panic if numeric bases are not the same._
   pub fn mut_mul(&mut self, other: Self) -> Self {
     let (d, r) = self.multiply(other, 0).head_tail();
     self.digit = d;
@@ -1073,131 +1121,6 @@ impl PartialOrd for Digits {
       }
     }
     result
-  }
-}
-
-#[allow(missing_docs)]
-#[derive(Debug)]
-pub struct StepMap {
-  digits: Digits,
-  base_map: Vec<u64>,
-  limit: u8,
-}
-
-impl StepMap {
-  #[allow(missing_docs)]
-  pub fn new(d: Digits, n: u8) -> Self {
-    assert!(d.mapping.base > 3, "\n\n  WARNING!\n\n  \"You may not use non-adjacent stepping with numeric bases of less than 4!\"\n\n");
-    StepMap {
-      digits: d,
-      base_map: vec![],
-      limit: n,
-    }
-  }
-}
-
-extern crate array_tool;
-use array_tool::vec::Shift;
-
-impl Iterator for StepMap {
-  type Item = Digits;
-
-  #[inline]
-  fn next(&mut self) -> Option<Digits> {
-    let mut next_map: Vec<u64>;
-    match self.base_map.len() {
-      0 => next_map = vec![1],
-      1 => {
-        match self.base_map[0].clone() {
-          1 => next_map = vec![2],
-          2 => next_map = vec![3],
-          3 => next_map = vec![1,1],
-          _ => unreachable!(),
-        }
-      },
-      2 => {
-        match (
-            self.base_map[0].clone(),
-            self.base_map[1].clone()
-          ) {
-          (1,1) => next_map = vec![2,1],
-          (2,1) => {
-            if self.limit == 0 {
-              next_map = vec![1,0,3]
-            } else {
-              next_map = vec![1,0,1]
-            }
-          },
-          _ => unreachable!(),
-        }
-      },
-      _ => {
-        // if one then two
-        if self.base_map[0] == 1 { 
-          next_map = self.base_map[1..self.base_map.len()].to_vec();
-          next_map.unshift(2);
-        } else { // if two then tail and one
-          next_map = self.base_map.clone();
-
-          let end_zero_qty = |v: &Vec<u64>| {
-            let mut count = 0;
-            let mut i = v.iter().rev();
-            loop {
-              match i.next() {
-                Some(&0) => { count += 1 },
-                _ => break,
-              }
-            }
-            count
-          };
-
-          match (
-              self.base_map[self.base_map.len()-2].clone(),
-              self.base_map[self.base_map.len()-1].clone()
-            ) {
-            (0,1) => {
-              next_map.pop();
-              if end_zero_qty(&next_map) < self.limit + 1 {
-                next_map.push(0);
-              }
-              if end_zero_qty(&next_map) < self.limit + 1 {
-                next_map.push(1);
-              } else {
-                next_map.push(3);
-              }
-            },
-            (0,3) => {
-              next_map.pop();
-              next_map.push(2);
-              next_map.push(1);
-            },
-            (2,1) => {
-              // build tower of multiples of 20
-              // but first max zeros before appending 20
-              // then if zeros are max use 3; else 1 on end
-              next_map.pop();
-              next_map.pop();
-              if end_zero_qty(&next_map) == self.limit + 1 {
-                next_map.push(2);
-                next_map.push(0);
-              } else {
-                next_map.push(0);
-              }
-              if self.limit == 0 {
-                next_map.push(3);
-              } else {
-                next_map.push(1);
-              }
-            },
-            _ => unreachable!(),
-          }
-          next_map.shift();
-          next_map.unshift(1);
-        }
-      },
-    }
-    self.base_map = next_map;
-    Some(self.digits.new_mapped(self.base_map.clone()).ok().unwrap())
   }
 }
 
