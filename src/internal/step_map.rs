@@ -3,7 +3,7 @@ use ::{BaseCustom,Digits};
 
 #[allow(missing_docs)]
 #[derive(Debug)]
-pub struct StepMap {
+pub(crate) struct StepMap {
   digits: Digits,
   base_map: Vec<u64>,
   limit: u8,

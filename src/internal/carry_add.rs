@@ -1,12 +1,12 @@
 #[allow(dead_code)]
 #[derive(Clone,Copy)]
-pub enum Sign {
+pub(crate) enum Sign {
   Plus,
   Minus,
 }
 
 #[derive(Clone,Copy)]
-pub struct SignNum<T> {
+pub(crate) struct SignNum<T> {
   pub num: T,
   pub sign: Sign,
 }
@@ -22,12 +22,12 @@ impl<T> SignNum<T>
 }
 
 #[allow(dead_code)]
-pub struct CarryResult<T> where T: Sized + PartialEq {
+pub(crate) struct CarryResult<T> where T: Sized + PartialEq {
   pub sign_num: SignNum<T>,
   pub carry: Option<SignNum<T>>,
 }
 
-pub trait CappedAdd<T> where T: Sized + PartialEq {
+pub(crate) trait CappedAdd<T> where T: Sized + PartialEq {
   fn capped_add(&self, other: Self, cap: (T, T)) -> CarryResult<T>;
 }
 
