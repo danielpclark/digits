@@ -27,14 +27,14 @@ math methods added to help progress through sequences as you would like.
 Add the following to your Cargo.toml file
 ```toml
 [dependencies]
-digits = "^0.3"
+digits = "^1.0"
 ```
 
 To include it for usage add
 
 ```rust
 extern crate digits;
-use digits::{BaseCustom,Digits};
+use digits::prelude::*;
 ```
 
 to your file.
@@ -53,7 +53,7 @@ let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
 
 // Once you have a custom numeric base defined you can create instances of Digits in many ways.
 
-let hundred = Digits::new(&base10, "100".to_string());
+let hundred = Digits::new(base10.clone(), "100".to_string());
 
 // If you don't want to have to pass the base value in each time you create a new number
 // you can propagate a new one out with the `propagate` method.
@@ -84,12 +84,12 @@ hundred.one() // A Digits instance with the value of 1
 hundred.zero() // A Digits instance with the value of 0
 
 // Count down or up with `pred_till_zero` and `succ`
-let mut ten = Digits::new(&base10, "10".to_string());
+let mut ten = Digits::new(base10.clone(), "10".to_string());
 assert_eq!(ten.pred_till_zero().to_s(), "09");
 assert_eq!(ten.pred_till_zero().to_s(), "08");
 assert_eq!(ten.pred_till_zero().to_s(), "07");
 
-let mut nine = Digits::new(&base10, "9".to_string());
+let mut nine = Digits::new(base10.clone(), "9".to_string());
 assert_eq!(nine.succ().to_s(), "10");
 assert_eq!(nine.succ().to_s(), "11");
 assert_eq!(nine.succ().to_s(), "12");
@@ -103,6 +103,8 @@ numeric bases and character sets.  It can be used for quite a lot!
 1) The first goal of this library is to be thread safe and function well for sequencing characters.
 
 2) The secondary goal, which may improve with time, is performance.
+
+3) The third goal is to have fun re-inventing mathematics and experiments.
 
 ## License
 

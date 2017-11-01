@@ -1,6 +1,6 @@
 [package]
 name = "digits"
-version = "0.3.9"
+version = "1.0.0"
 authors = ["Daniel P. Clark <6ftdan@gmail.com>"]
 description = "Custom “numeric” incrementor without u64 MAX limit in size. Like a score flipper for a custom character set."
 documentation = "http://danielpclark.github.io/digits/index.html"
@@ -16,4 +16,4 @@ travis-ci = { repository = "danielpclark/digits", branch = "master" }
 
 [dependencies]
 array_tool = "^0.4.1"
-base_custom = "^0.1.11"
+base_custom = "^0.1.12"
