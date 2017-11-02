@@ -32,7 +32,7 @@ impl Iterator for StepMap {
     match self.base_map.len() {
       0 => next_map = vec![1],
       1 => {
-        match self.base_map[0].clone() {
+        match self.base_map[0] {
           1 => next_map = vec![2],
           2 => next_map = vec![3],
           3 => next_map = vec![1,1],
@@ -41,8 +41,8 @@ impl Iterator for StepMap {
       },
       2 => {
         match (
-            self.base_map[0].clone(),
-            self.base_map[1].clone()
+            self.base_map[0],
+            self.base_map[1]
           ) {
           (1,1) => next_map = vec![2,1],
           (2,1) => {
@@ -66,18 +66,15 @@ impl Iterator for StepMap {
           let end_zero_qty = |v: &Vec<u64>| {
             let mut count = 0;
             let mut i = v.iter().rev();
-            loop {
-              match i.next() {
-                Some(&0) => { count += 1 },
-                _ => break,
-              }
+            while let Some(&0) = i.next() {
+              count += 1; 
             }
             count
           };
 
           match (
-              self.base_map[self.base_map.len()-2].clone(),
-              self.base_map[self.base_map.len()-1].clone()
+              self.base_map[self.base_map.len()-2],
+              self.base_map[self.base_map.len()-1]
             ) {
             (0,1) => {
               next_map.pop();

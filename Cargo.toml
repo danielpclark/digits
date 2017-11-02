@@ -17,3 +17,7 @@ travis-ci = { repository = "danielpclark/digits", branch = "master" }
 [dependencies]
 array_tool = "^0.4.1"
 base_custom = "^0.1.12"
+clippy = {version = "*", optional = true}
+
+[features]
+default = []

@@ -32,9 +32,8 @@ pub(crate) trait CappedAdd<T> where T: Sized + PartialEq {
 }
 
 impl CappedAdd<u64> for SignNum<u64> {
-  #[allow(unused_comparisons)]
   fn capped_add(&self, other: Self, cap: (u64, u64)) -> CarryResult<u64> {
-    if !(cap.1 == 0 && cap.0 < 0) { // If not a nega-base (not yet implemented)
+    if !(cap.1 == 0) {
       assert!(cap.0 == 0 && cap.1 > 0);
     }
     match (self.sign, other.sign) {
@@ -56,7 +55,7 @@ impl CappedAdd<u64> for SignNum<u64> {
 
 impl CappedAdd<u64> for u64 {
   fn capped_add(&self, other: Self, cap: (u64, u64)) -> CarryResult<u64> {
-    SignNum::new(self.clone()).capped_add(SignNum::new(other), cap)
+    SignNum::new(*self).capped_add(SignNum::new(other), cap)
   }
 }
 

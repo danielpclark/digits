@@ -7,7 +7,7 @@
 //
 #![deny(missing_docs,trivial_casts,trivial_numeric_casts,
         missing_debug_implementations, missing_copy_implementations,
-        unsafe_code,unstable_features,unused_import_braces,unused_qualifications)
+        unsafe_code,unused_import_braces,unused_qualifications)
 ]
 //! # digits
 //!
@@ -16,6 +16,8 @@
 //! possibilities beyond the numeric limits intrinsic in basic numerc types like `u64`.
 //!
 //! Primary use case would be brute forcing character sequences.
+#![cfg_attr(feature="clippy", feature(plugin))]
+#![cfg_attr(feature="clippy", plugin(clippy))]
 extern crate base_custom;
 #[doc(no_inline)]
 pub use base_custom::BaseCustom;
@@ -31,7 +33,7 @@ use internal::step_map::StepMap;
 use internal::carry_add::{CappedAdd,SignNum,Sign};
 
 /// This struct acts similar to a full number with a custom numeric character base
-/// which is provided and mapped via a BaseCustom instance.
+/// which is provided and mapped via a `BaseCustom` instance.
 ///
 /// The underlying implementation for Digits is a linked list where all the methods recurse
 /// as far as need to to implement the operations.
@@ -82,23 +84,23 @@ impl Digits {
       result.push(
         {
           let cr = carry.capped_add({
-            cs.unwrap_or(Box::new(self.zero())).digit +
-            os.unwrap_or(Box::new(self.zero())).digit},
+            cs.unwrap_or_else(|| Box::new(self.zero())).digit +
+            os.unwrap_or_else(|| Box::new(self.zero())).digit},
             (0, self.base() as u64)
           );
           remainder = cr.carry;
           cr.sign_num.num
         }
       );
-      let guard = remainder.unwrap_or(SignNum::new(0));
+      let guard = remainder.unwrap_or_else(|| SignNum::new(0));
       match guard.sign {
         Sign::Plus => {
           carry = guard.num;
         },
         Sign::Minus => unimplemented!()
       }
-      c_self = c_self.unwrap_or(Box::new(self.zero())).left;
-      o_self = o_self.unwrap_or(Box::new(self.zero())).left;
+      c_self = c_self.unwrap_or_else(|| Box::new(self.zero())).left;
+      o_self = o_self.unwrap_or_else(|| Box::new(self.zero())).left;
     }
     result.reverse();
     self.new_mapped(result).unwrap()
@@ -106,13 +108,13 @@ impl Digits {
 
   /// Returns a vector of each characters position mapping
   pub fn as_mapping_vec(&self) -> Vec<u64> {
-    match &self.left {
-      &Some(ref l) => {
+    match self.left {
+      Some(ref l) => {
         let mut result = l.as_mapping_vec();
         result.extend(vec![self.digit]);
         result
       },
-      &None => vec![self.digit],
+      None => vec![self.digit],
     }
   }
 
@@ -149,15 +151,6 @@ impl Digits {
     }
   }
 
-  #[allow(dead_code)]
-  fn into_base(&self, other: Digits) -> Self {
-    if self.mapping == other.mapping {
-      other
-    } else {
-      self.gen(other)
-    }
-  }
-
   /// Returns true of false based on whether the limit of allowed adjacents is not exceeded.
   /// Early termination result when false.
   ///
@@ -166,23 +159,16 @@ impl Digits {
     let mut ptr = self;
     let mut last_num = self.digit;
     let mut last_num_count = 0;
-    loop {
-      match &ptr.left {
-        &Some(ref item) => {
-          if item.digit == last_num {
-            last_num_count += 1;
-          } else {
-            last_num_count = 0;
-          }
-
-          if last_num_count > adjacent { return false; }
-          last_num = item.digit;
-          ptr = item;
-        },
-        &None => {
-          break;
-        },
+    while let Some(ref item) = ptr.left {
+      if item.digit == last_num {
+        last_num_count += 1;
+      } else {
+        last_num_count = 0;
       }
+
+      if last_num_count > adjacent { return false; }
+      last_num = item.digit;
+      ptr = item;
     }
     true
   }
@@ -215,26 +201,26 @@ impl Digits {
   /// Returns bool value of if the number is one.
   pub fn is_one(&self) -> bool {
     if self.digit != 1 { return false }
-    match &self.left {
-      &None => { true },
-      &Some(ref bx) => { bx.is_zero() },
+    match self.left {
+      None => { true },
+      Some(ref bx) => { bx.is_zero() },
     }
   }
 
   /// Returns bool value of if the number is zero.
   pub fn is_zero(&self) -> bool {
     if self.digit != 0 { return false }
-    match &self.left {
-      &None => { true },
-      &Some(ref bx) => { bx.is_zero() },
+    match self.left {
+      None => { true },
+      Some(ref bx) => { bx.is_zero() },
     }
   }
 
   /// Returns a `usize` of the total linked list length.
   pub fn length(&self) -> usize {
-    match &self.left {
-      &None => 1,
-      &Some(ref l) => { l.length() + 1 }
+    match self.left {
+      None => 1,
+      Some(ref l) => { l.length() + 1 }
     }
   }
 
@@ -264,9 +250,9 @@ impl Digits {
     let mut lnc = last_num_count;
     if self.digit == last_num { lnc += 1; } else { lnc = 1; }
     let max_count = std::cmp::max(lnc, max_count);
-    match &self.left {
-      &None => max_count,
-      &Some(ref l) => { l.max_adj(self.digit, lnc, max_count) },
+    match self.left {
+      None => max_count,
+      Some(ref l) => { l.max_adj(self.digit, lnc, max_count) },
     }
   }
 
@@ -305,25 +291,19 @@ impl Digits {
     let mut o = Some(Box::new(other));
     let mut result = self.zero();
 
-    loop {
-      match o.clone() {
-        Some(thing) => {
-          let (dgt, tail) = thing.head_tail();
-          o = tail;
+    while let Some(thing) = o.clone() {
+      let (dgt, tail) = thing.head_tail();
+      o = tail;
 
-          let mltply = self.propagate((self.digit * dgt).to_string()).pow_ten(position);
+      let mltply = self.propagate((self.digit * dgt).to_string()).pow_ten(position);
 
-          let current_digit = self.propagate(self.mapping.gen(dgt).to_string());
+      let current_digit = self.propagate(self.mapping.gen(dgt).to_string());
 
-          if let Some(ref bx) = self.left {
-            result.mut_add_internal(bx.clone().multiply(current_digit, position + 1), true);
-          };
+      if let Some(ref bx) = self.left {
+        result.mut_add_internal(bx.clone().multiply(current_digit, position + 1), true);
+      };
 
-          result.mut_add_internal( mltply, true );
-        },
-        None => break,
-      }
-
+      result.mut_add_internal( mltply, true );
       position += 1;
     }
 
@@ -478,7 +458,7 @@ impl Digits {
       return Err("Character mapping out of range!");
     }
     let num = places.iter().fold("".to_string(), |mut acc, &x| {
-        acc.push(self.mapping.nth(x as usize).unwrap().clone());
+        acc.push(*self.mapping.nth(x as usize).unwrap());
         acc
       }
     );
@@ -586,11 +566,10 @@ impl Digits {
     if pwr.is_zero() { return self.one(); }
     let copy = self.clone();
     loop {
-      match pwr.is_one() {
-        true => break,
-        false => {
-          self.mut_mul(copy.clone());
-        }
+      if pwr.is_one() {
+        break
+      } else {
+        self.mut_mul(copy.clone());
       }
       pwr.pred_till_zero();
     }
@@ -666,7 +645,7 @@ impl Digits {
 
       for (i, item) in itr {
         if last_num == None {
-          last_num = Some(item.clone());
+          last_num = Some(*item);
           continue;
         }
 
@@ -692,7 +671,7 @@ impl Digits {
           }
         }
         
-        last_num = Some(item.clone());
+        last_num = Some(*item);
       }
       break;
     }
@@ -745,13 +724,11 @@ impl Digits {
   /// ```
   pub fn rcount(&self, character_index: u8) -> usize {
     if let Some(ref d) = self.left {
-      if self.digit == character_index as u64 {
+      if self.digit == u64::from(character_index) {
         return d.rcount(character_index) + 1;
       }
-    } else{
-      if self.digit == character_index as u64 {
-        return 1;
-      }
+    } else if self.digit == u64::from(character_index) {
+      return 1;
     }
     0
   }
@@ -811,9 +788,9 @@ impl Digits {
   /// Gives the full value of all digits within the linked list as a String.
   pub fn to_s(&self) -> String {
     let num = self.mapping.gen(self.digit);
-    match &self.left {
-      &None => format!("{}", num),
-      &Some(ref bx) => format!("{}{}", bx.to_s(), num),
+    match self.left {
+      None => num.to_owned(),
+      Some(ref bx) => format!("{}{}", bx.to_s(), num),
     }
   }
 
@@ -892,7 +869,7 @@ impl Digits {
     if let Some(ref v) = self.left {
       lnum = v.to_s();
     }
-    lnum = lnum.trim_left_matches(self.mapping.zero().clone()).to_string();
+    lnum = lnum.trim_left_matches(*self.mapping.zero()).to_string();
     let lval = self.propagate(lnum);
     self.set_left(lval, true);
   }
@@ -964,42 +941,32 @@ impl From<(BaseCustom<char>, Digits)> for Digits {
     let mut position = 0;
     // Down-Casting
     if from_base >= mapping.base {
-      loop {
-        match pointer {
-          Some(bx) => {
-            let (h, t) = bx.head_tail();
-            if h != 0 { // speed optimization
-              result.mut_add_internal(
-                Digits::new(mapping.clone(), mapping.gen(h)).mul(
-                  Digits::new(mapping.clone(), mapping.gen(from_base)).
-                    pow(source.gen(position))
-                ),
-                true
-              );
-            }
-            position += 1;
-            pointer = t;
-          },
-          None => break,
+      while let Some(bx) = pointer {
+        let (h, t) = bx.head_tail();
+        if h != 0 { // speed optimization
+          result.mut_add_internal(
+            Digits::new(mapping.clone(), mapping.gen(h)).mul(
+              Digits::new(mapping.clone(), mapping.gen(from_base)).
+                pow(source.gen(position))
+            ),
+            true
+          );
         }
+        position += 1;
+        pointer = t;
       }
     } else { // Up-Casting
-      loop {
-        match pointer {
-          Some(bx) => {
-            let (h, t) = bx.head_tail();
-            if h != 0 { // speed optimization
-              result.mut_add_internal(
-                // This implementation is limited by the max of usize
-                Digits::new(mapping.clone(), mapping.gen(h * from_base.pow(position as u32))),
-                true
-              );
-            }
-            position += 1;
-            pointer = t;
-          },
-          None => break,
+      while let Some(bx) = pointer {
+        let (h, t) = bx.head_tail();
+        if h != 0 { // speed optimization
+          result.mut_add_internal(
+            // This implementation is limited by the max of usize
+            Digits::new(mapping.clone(), mapping.gen(h * from_base.pow(position as u32))),
+            true
+          );
         }
+        position += 1;
+        pointer = t;
       }
     }
     result
@@ -1008,6 +975,7 @@ impl From<(BaseCustom<char>, Digits)> for Digits {
 
 impl From<(Digits, Digits)> for Digits {
   fn from(d: (Digits, Digits)) -> Digits {
+    if d.0.base() == d.1.base() { return d.1; }
     Digits::from((d.0.mapping, d.1))
   }
 }
@@ -1106,18 +1074,12 @@ impl PartialOrd for Digits {
     let mut a: Self = self.clone();
     let mut b: Self = other.clone();
     result = a.digit.partial_cmp(&b.digit);
-    loop {
-      match (a.left, b.left) {
-        (Some(x),Some(y)) => {
-          a = x.replicate();
-          b = y.replicate();
-          match a.digit.partial_cmp(&b.digit) {
-            Some(Ordering::Equal) => (),
-            Some(change) => { result = Some(change); },
-            None => (),
-          }
-        }
-        _ => { break }
+    while let (Some(x),Some(y)) = (a.left, b.left) {
+      a = x.replicate();
+      b = y.replicate();
+      match a.digit.partial_cmp(&b.digit) {
+        Some(Ordering::Equal) | None => (),
+        Some(change) => { result = Some(change); },
       }
     }
     result
@@ -1142,43 +1104,43 @@ impl Default for Digits {
 /// A default Radix modules including most common numeric bases.
 pub mod radices {
   use super::*;
-  /// Binary implementation of BaseCustom
+  /// Binary implementation of `BaseCustom`
   pub fn binary_base() -> BaseCustom<char> {
     BaseCustom::<char>::new("01".chars().collect())
   }
 
-  /// Octal implementation of BaseCustom
+  /// Octal implementation of `BaseCustom`
   pub fn octal_base() -> BaseCustom<char> {
     BaseCustom::<char>::new("01234567".chars().collect())
   }
 
-  /// Decimal implementation of BaseCustom
+  /// Decimal implementation of `BaseCustom`
   pub fn decimal_base() -> BaseCustom<char> {
     BaseCustom::<char>::new("0123456789".chars().collect())
   }
 
-  /// Hexadecimal implementation of BaseCustom
+  /// Hexadecimal implementation of `BaseCustom`
   pub fn hex_base() -> BaseCustom<char> {
     BaseCustom::<char>::new("0123456789ABCDEF".chars().collect())
   }
 
-  /// Lowercase hexadecimal implementation of BaseCustom
+  /// Lowercase hexadecimal implementation of `BaseCustom`
   pub fn hexl_base() -> BaseCustom<char> {
     BaseCustom::<char>::new("0123456789abcdef".chars().collect())
   }
 }
 
-/// Default Radix type conversion for Digits
+/// Default Radix type conversion for `Digits`
 pub trait Radix {
-  /// Convert current Digits to binary
+  /// Convert current `Digits` to binary
   fn binary(&self)  -> Self;
-  /// Convert current Digits to octal
+  /// Convert current `Digits` to octal
   fn octal(&self)   -> Self;
-  /// Convert current Digits to decimal
+  /// Convert current `Digits` to decimal
   fn decimal(&self) -> Self;
-  /// Convert current Digits to hexadecimal
+  /// Convert current `Digits` to hexadecimal
   fn hex(&self)     -> Self;
-  /// Convert current Digits to lowercase hexadecimal
+  /// Convert current `Digits` to lowercase hexadecimal
   fn hexl(&self)    -> Self;
 }
 
