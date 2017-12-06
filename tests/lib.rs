@@ -2,6 +2,14 @@ extern crate digits;
 use digits::prelude::*;
 
 #[test]
+fn value_comparison() {
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let fifteen = Digits::new(base10.clone(), "000015".to_string());
+  let twentyfive = Digits::new(base10, "025".to_string());
+  assert!(twentyfive > fifteen, "Comparison of Ordering failed!");
+}
+
+#[test]
 fn up_casting() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let base16 = BaseCustom::<char>::new("0123456789ABCDEF".chars().collect());
