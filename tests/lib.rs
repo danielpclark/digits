@@ -10,6 +10,15 @@ fn value_comparison() {
 }
 
 #[test]
+fn value_comparison_equal() {
+  use std::cmp::Ordering;
+  let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  let fifteen = Digits::new(base10.clone(), "000015".to_string());
+  let b = fifteen.clone();
+  assert_eq!(b.partial_cmp(&fifteen), Some(Ordering::Equal));
+}
+
+#[test]
 fn up_casting() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let base16 = BaseCustom::<char>::new("0123456789ABCDEF".chars().collect());
