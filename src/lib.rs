@@ -442,7 +442,7 @@ impl Digits {
   ///
   /// let base16 = BaseCustom::<char>::new("0123456789abcdef".chars().collect());
   /// let builder = Digits::new(base16, "".to_string());
-  /// let num = builder.new_mapped(vec![1,0,2,1]).ok().unwrap();
+  /// let num = builder.new_mapped(&vec![1,0,2,1]).ok().unwrap();
   ///
   /// assert_eq!(num.to_s(), "1021");
   /// ```

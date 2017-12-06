@@ -131,7 +131,7 @@ fn it_allows_two_adjacent_characters_in_step() {
 fn it_counts_maximum_adjacent_characters() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let builder = Digits::new(base10, "".to_string());
-  let num = builder.new_mapped(vec![1,0,5,5,5,5,5,5,5,2,1,1,1,1]).ok().unwrap();
+  let num = builder.new_mapped(&vec![1,0,5,5,5,5,5,5,5,2,1,1,1,1]).ok().unwrap();
   assert_eq!(num.max_adjacent(), 6); // 7 - 1
 }
 
@@ -139,7 +139,7 @@ fn it_counts_maximum_adjacent_characters() {
 fn it_right_counts_character_base_index_matches() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let builder = Digits::new(base10, "".to_string());
-  let num = builder.new_mapped(vec![1,0,2,1,1,1,1]).ok().unwrap();
+  let num = builder.new_mapped(&vec![1,0,2,1,1,1,1]).ok().unwrap();
   assert_eq!(num.rcount(1), 4);
 }
 
@@ -147,7 +147,7 @@ fn it_right_counts_character_base_index_matches() {
 fn it_mapps_to_correct_from_zero_numeric_chars() {
   let base16 = BaseCustom::<char>::new("0123456789abcdef".chars().collect());
   let builder = Digits::new(base16, "".to_string());
-  let num = builder.new_mapped(vec![1,0,2,1]).ok().unwrap();
+  let num = builder.new_mapped(&vec![1,0,2,1]).ok().unwrap();
   assert_eq!(num.to_s(), "1021");
 }
 
@@ -155,9 +155,9 @@ fn it_mapps_to_correct_from_zero_numeric_chars() {
 fn it_errs_correctly_for_max_map_range() {
   let base16 = BaseCustom::<char>::new("0123456789abcdef".chars().collect());
   let builder = Digits::new(base16, "".to_string());
-  let num = builder.new_mapped(vec![15]).ok().unwrap();
+  let num = builder.new_mapped(&vec![15]).ok().unwrap();
   assert_eq!(num.to_s(), "f");
-  let num = builder.new_mapped(vec![16]);
+  let num = builder.new_mapped(&vec![16]);
   assert_eq!(num, Err("Character mapping out of range!"));
 }
 
