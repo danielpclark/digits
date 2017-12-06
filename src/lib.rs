@@ -103,7 +103,7 @@ impl Digits {
       o_self = o_self.unwrap_or_else(|| Box::new(self.zero())).left;
     }
     result.reverse();
-    self.new_mapped(result).unwrap()
+    self.new_mapped(&result).unwrap()
   }
 
   /// Returns a vector of each characters position mapping
@@ -453,7 +453,7 @@ impl Digits {
   ///
   /// If a number provided within the vector is higher than the numeric base size then the method
   /// will return an `Err(&'static str)` Result.
-  pub fn new_mapped(&self, places: Vec<u64>) -> Result<Self, &'static str> {
+  pub fn new_mapped(&self, places: &[u64]) -> Result<Self, &'static str> {
     if places.iter().any(|&x| x >= self.mapping.base) {
       return Err("Character mapping out of range!");
     }
@@ -658,7 +658,7 @@ impl Digits {
 
           if last_num_count > adjacent {
             let i = i + 1;
-            let mut d = self.new_mapped(v[0..i].to_vec()).ok().unwrap();
+            let mut d = self.new_mapped(&v[0..i].to_vec()).ok().unwrap();
             d.succ();
             let mut new_v = d.as_mapping_vec();
 
@@ -675,7 +675,7 @@ impl Digits {
       }
       break;
     }
-    let result = self.new_mapped(v).ok().unwrap().pred_till_zero();
+    let result = self.new_mapped(&v).ok().unwrap().pred_till_zero();
     self.digit = result.digit;
     self.left = result.left.clone();
     result
@@ -1079,15 +1079,11 @@ impl PartialOrd for Digits {
         Some(change) => { result = Some(change); },
       }
     }
-    if a.left.is_some() && !b.left.is_some() {
-      if !a.left.clone().unwrap().is_zero() {
-        result = Some(Ordering::Greater);
-      }
+    if a.left.is_some() && !b.left.is_some() && !a.left.clone().unwrap().is_zero() {
+      result = Some(Ordering::Greater);
     }
-    if !a.left.is_some() && b.left.is_some() {
-      if !b.left.unwrap().is_zero() {
-        result = Some(Ordering::Less);
-      }
+    if !a.left.is_some() && b.left.is_some() && !b.left.unwrap().is_zero() {
+      result = Some(Ordering::Less);
     }
     result
   }

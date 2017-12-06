@@ -118,7 +118,7 @@ impl Iterator for StepMap {
       },
     }
     self.base_map = next_map;
-    Some(self.digits.new_mapped(self.base_map.clone()).ok().unwrap())
+    Some(self.digits.new_mapped(&self.base_map.clone()).ok().unwrap())
   }
 }
 
