@@ -869,7 +869,7 @@ impl Digits {
     if let Some(ref v) = self.left {
       lnum = v.to_s();
     }
-    lnum = lnum.trim_left_matches(*self.mapping.zero()).to_string();
+    lnum = lnum.trim_start_matches(*self.mapping.zero()).to_string();
     let lval = self.propagate(lnum);
     self.set_left(lval, true);
   }
