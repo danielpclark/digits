@@ -50,3 +50,16 @@ jobs:
       - run: cargo doc --no-deps
         env:
           RUSTDOCFLAGS: -D warnings
+
+  benchmarks:
+    name: benchmarks compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --check
+        working-directory: benchmarks
+      - run: cargo bench --no-run
+        working-directory: benchmarks
