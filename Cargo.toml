@@ -15,7 +15,7 @@ categories = ["cryptography", "data-structures"]
 travis-ci = { repository = "danielpclark/digits", branch = "master" }
 
 [dependencies]
-base_custom = { version = "0.2.1", git = "https://github.com/danielpclark/base_custom", rev = "e98d9e21f9a51f6e3135a45b25c0ece01cb16a9f" }
+base_custom = { version = "0.2.1", git = "https://github.com/danielpclark/base_custom", rev = "33b13de829808e950012f8be2b880ac65b9225aa" }
 clippy = {version = "0.0.175", optional = true}
 
 [features]
