@@ -25,17 +25,26 @@ memory alone, and the common operations are much faster.
 
 ### Performance
 
-Measured in release builds, 1.1.1 → 2.0.0:
+Criterion medians on identical inputs, 1.1.1 (from crates.io) against 2.0.0, from
+[`benchmarks/`](benchmarks) on an Intel Xeon @ 2.10GHz with rustc 1.97.  Full tables with
+confidence intervals and smaller sizes are in [`benchmarks/RESULTS.md`](benchmarks/RESULTS.md).
 
-| Operation | 1.1.1 | 2.0.0 |
-|---|---|---|
-| `succ` on 4,000 nines (full carry) | 16 s | 2.5 µs |
-| `succ` without carry on 4,000 digits | 4.3 ms | 6 ns |
-| 40 × 40 digit `mul` | 11 s | 6 µs |
-| `2^200` with `pow` | 12 s | 7 µs |
-| `2^100000` with `pow` | (did not finish) | 0.19 s |
-| 10,000 digit decimal → hex | (overflowed) | 56 ms |
-| 100,000 `next_non_adjacent(0)` steps on 7 digits | — | 2.2 ms |
+| Operation | 1.1.1 | 2.0.0 | Speedup |
+|---|---:|---:|---:|
+| `succ` on 1,000 nines (full carry) | 1.14 s | 700 ns | 1,600,000× |
+| 1,000 `succ` calls on an 8-digit counter | 2.73 ms | 2.12 µs | 1,300× |
+| `add` of two 1,000-digit numbers | 134 ms | 1.51 µs | 88,000× |
+| `mul` of two 20-digit numbers | 298 ms | 417 ns | 715,000× |
+| `pow`: 2^100 | 300 ms | 1.23 µs | 243,000× |
+| `partial_cmp` of 1,000-digit numbers (differing in the last digit) | 321 ms | 295 ns | 1,090,000× |
+| `Digits::new` from 4,000 characters | 7.05 ms | 33.5 µs | 210× |
+| 18-digit decimal → hex | 877 µs | 820 ns | 1,070× |
+| 1,000 `next_non_adjacent(0)` steps from `00000000` | 7.00 ms | 12.7 µs | 550× |
+
+Sizes 1.1.1 cannot reach (it overflows converting more than 19 decimal digits, and the
+operations above grow far faster than linearly), measured on 2.0.0 alone: `succ` on 100,000
+nines 42.9 µs, 2,000 × 2,000-digit `mul` 1.5 ms, 2^100000 112 ms, 10,000-digit decimal → hex
+25.9 ms, `Digits::new` from 1,000,000 characters 8.0 ms.
 
 ### Changed (breaking)
 

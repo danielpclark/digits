@@ -195,9 +195,11 @@ fn pow(c: &mut Criterion) {
 fn compare(c: &mut Criterion) {
   let mut group = c.benchmark_group("partial_cmp");
   for &n in &[10usize, 100, 1_000] {
-    let tail = number(n - 1);
-    let (a1, b1) = (v1(&format!("1{}", tail)), v1(&format!("2{}", tail)));
-    let (a2, b2) = (v2(&format!("1{}", tail)), v2(&format!("2{}", tail)));
+    // Equal except in the least significant digit: the worst case for 2.0.0,
+    // which compares from the most significant end.
+    let head = number(n - 1);
+    let (a1, b1) = (v1(&format!("{}1", head)), v1(&format!("{}2", head)));
+    let (a2, b2) = (v2(&format!("{}1", head)), v2(&format!("{}2", head)));
     group.bench_function(BenchmarkId::new(V1, n), |b| {
       b.iter(|| black_box(&a1).partial_cmp(&b1))
     });
