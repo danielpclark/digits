@@ -1,4 +1,5 @@
-extern crate digits;
+// These tests check each comparison operator directly, including negated ones.
+#![allow(clippy::neg_cmp_op_on_partial_ord)]
 use digits::prelude::*;
 
 #[test]
@@ -45,13 +46,13 @@ fn is_will_reverse() {
 fn is_adjacent_limit() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let num = Digits::new(base10.clone(), "0008".to_string());
-  assert_eq!(num.is_valid_adjacent(0), false);
-  assert_eq!(num.is_valid_adjacent(1), false);
-  assert_eq!(num.is_valid_adjacent(2), true);
+  assert!(!num.is_valid_adjacent(0));
+  assert!(!num.is_valid_adjacent(1));
+  assert!(num.is_valid_adjacent(2));
   let num = Digits::new(base10, "998".to_string());
-  assert_eq!(num.is_valid_adjacent(0), false);
-  assert_eq!(num.is_valid_adjacent(1), true);
-  assert_eq!(num.is_valid_adjacent(2), true);
+  assert!(!num.is_valid_adjacent(0));
+  assert!(num.is_valid_adjacent(1));
+  assert!(num.is_valid_adjacent(2));
 }
 
 #[test]
@@ -76,7 +77,7 @@ fn it_allows_one_adjacent_character_in_step_non_adjacent() {
 fn as_mapping_result() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let num = Digits::new(base10, "0123456789".to_string());
-  assert_eq!(num.as_mapping_vec(), vec![0,1,2,3,4,5,6,7,8,9]);
+  assert_eq!(num.as_mapping_vec(), vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 }
 
 #[test]
@@ -99,12 +100,15 @@ fn it_shows_the_base_size() {
   assert_eq!(num.base(), 10);
 }
 
-#[should_panic]
 #[test]
-fn should_panic_when_base_too_low_for_non_adjacent_stepping() {
+fn non_adjacent_stepping_works_in_small_bases() {
   let base2 = BaseCustom::<char>::new("01".chars().collect());
   let mut num = Digits::new(base2, "101010".to_string());
   assert_eq!(num.next_non_adjacent(0).to_s(), "1010101".to_string());
+  assert_eq!(num.next_non_adjacent(0).to_s(), "10101010".to_string());
+  let base3 = BaseCustom::<char>::new("012".chars().collect());
+  let mut num = Digits::new(base3, "0000".to_string());
+  assert_eq!(num.next_non_adjacent(1).to_s(), "0010".to_string());
 }
 
 #[test]
@@ -140,7 +144,10 @@ fn it_allows_two_adjacent_characters_in_step() {
 fn it_counts_maximum_adjacent_characters() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let builder = Digits::new(base10, "".to_string());
-  let num = builder.new_mapped(&vec![1,0,5,5,5,5,5,5,5,2,1,1,1,1]).ok().unwrap();
+  let num = builder
+    .new_mapped(&vec![1, 0, 5, 5, 5, 5, 5, 5, 5, 2, 1, 1, 1, 1])
+    .ok()
+    .unwrap();
   assert_eq!(num.max_adjacent(), 6); // 7 - 1
 }
 
@@ -148,7 +155,7 @@ fn it_counts_maximum_adjacent_characters() {
 fn it_right_counts_character_base_index_matches() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let builder = Digits::new(base10, "".to_string());
-  let num = builder.new_mapped(&vec![1,0,2,1,1,1,1]).ok().unwrap();
+  let num = builder.new_mapped(&[1, 0, 2, 1, 1, 1, 1]).ok().unwrap();
   assert_eq!(num.rcount(1), 4);
 }
 
@@ -156,7 +163,7 @@ fn it_right_counts_character_base_index_matches() {
 fn it_mapps_to_correct_from_zero_numeric_chars() {
   let base16 = BaseCustom::<char>::new("0123456789abcdef".chars().collect());
   let builder = Digits::new(base16, "".to_string());
-  let num = builder.new_mapped(&vec![1,0,2,1]).ok().unwrap();
+  let num = builder.new_mapped(&[1, 0, 2, 1]).ok().unwrap();
   assert_eq!(num.to_s(), "1021");
 }
 
@@ -164,9 +171,9 @@ fn it_mapps_to_correct_from_zero_numeric_chars() {
 fn it_errs_correctly_for_max_map_range() {
   let base16 = BaseCustom::<char>::new("0123456789abcdef".chars().collect());
   let builder = Digits::new(base16, "".to_string());
-  let num = builder.new_mapped(&vec![15]).ok().unwrap();
+  let num = builder.new_mapped(&[15]).ok().unwrap();
   assert_eq!(num.to_s(), "f");
-  let num = builder.new_mapped(&vec![16]);
+  let num = builder.new_mapped(&[16]);
   assert_eq!(num, Err("Character mapping out of range!"));
 }
 
@@ -211,7 +218,7 @@ fn it_trims_zeros() {
 }
 
 #[test]
-fn normal_addition_preserves_zero_padding(){
+fn normal_addition_preserves_zero_padding() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let mut num1 = Digits::new(base10.clone(), "0001".to_string());
   let num2 = Digits::new(base10, "0011".to_string());
@@ -220,14 +227,14 @@ fn normal_addition_preserves_zero_padding(){
 }
 
 #[test]
-fn preserve_zero_padding_increment(){
+fn preserve_zero_padding_increment() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let mut num = Digits::new(base10, "0001".to_string());
   assert_eq!(num.succ().to_s(), "0002");
 }
 
 #[test]
-fn preserve_zero_padding_decrement(){
+fn preserve_zero_padding_decrement() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let mut num = Digits::new(base10, "1000".to_string());
   assert_eq!(num.pred_till_zero().to_s(), "0999");
@@ -240,7 +247,7 @@ fn it_panics_when_add_performed_with_different_bases() {
   let base2 = BaseCustom::<char>::new("01".chars().collect());
   let num1 = Digits::new(base10, "1".to_string());
   let num2 = Digits::new(base2, "1".to_string());
-  num1.clone().add(num2.clone());
+  let _ = num1.clone().add(num2.clone());
 }
 
 #[should_panic]
@@ -351,7 +358,7 @@ fn it_can_provide_one() {
 #[test]
 fn default_produces_base_ten_of_zero() {
   let zero: Digits = Default::default();
-  assert_eq!(zero.is_zero(), true);
+  assert!(zero.is_zero());
   assert_eq!(zero.gen(10).to_s(), "10".to_string());
 }
 
@@ -359,11 +366,11 @@ fn default_produces_base_ten_of_zero() {
 fn it_can_prove_zero() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let one = Digits::new_one(base10.clone());
-  assert_eq!(one.is_zero(), false);
+  assert!(!one.is_zero());
   let zero = Digits::new(base10.clone(), "0000".to_string());
-  assert_eq!(zero.is_zero(), true);
+  assert!(zero.is_zero());
   let thousand = Digits::new(base10, "01000".to_string());
-  assert_eq!(thousand.is_zero(), false);
+  assert!(!thousand.is_zero());
 }
 
 #[test]
@@ -488,7 +495,7 @@ fn get_digits_from_u64() {
 fn get_digits_from_digits_with_base() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let binary = BaseCustom::<char>::new("01".chars().collect());
-  
+
   let bin_ten = Digits::new(binary, "1010".to_string());
 
   let ten = Digits::from((base10, bin_ten));
@@ -501,7 +508,7 @@ fn get_digits_from_digits_with_digits() {
   let binary = BaseCustom::<char>::new("01".chars().collect());
 
   let digits_to_get_base_from = Digits::new_zero(base10);
-  
+
   let bin_ten = Digits::new(binary, "1010".to_string());
 
   let ten = Digits::from((digits_to_get_base_from, bin_ten));
@@ -513,7 +520,7 @@ fn get_digits_from_digits_with_same_digits_base() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let eleven = Digits::new(base10.clone(), "11".to_string());
   let one = Digits::new_one(base10);
-  
+
   let result = Digits::from((one, eleven.clone()));
   assert_eq!(result, eleven);
 }
@@ -529,7 +536,7 @@ fn it_gets_power_of_zero_and_one() {
 }
 
 #[test]
-fn it_can_add_with_plus_symbol(){
+fn it_can_add_with_plus_symbol() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let a = Digits::new(base10.clone(), "1".to_string());
   let b = Digits::new(base10, "1".to_string());
@@ -587,32 +594,32 @@ fn it_can_tell_which_digits_is_larger() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
   let ten = Digits::new(base10, "10".to_string());
   let one = ten.one();
-  assert_eq!(one < ten, true);
-  assert_eq!(one > ten, false);
-  assert_eq!(one <= ten, true);
-  assert_eq!(one >= ten, false);
+  assert!(one < ten);
+  assert!(!(one > ten));
+  assert!(one <= ten);
+  assert!(!(one >= ten));
 }
 
 #[test]
 fn it_can_tell_which_digits_is_larger_equal_length() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  let big   = Digits::new(base10,"2".to_string());
+  let big = Digits::new(base10, "2".to_string());
   let small = big.propagate("1".to_string());
-  assert_eq!(small <  big, true);
-  assert_eq!(small >  big, false);
-  assert_eq!(small <= big, true);
-  assert_eq!(small >= big, false);
+  assert!(small < big);
+  assert!(!(small > big));
+  assert!(small <= big);
+  assert!(!(small >= big));
 }
 
 #[test]
 fn it_can_tell_which_digits_is_larger_equal_length_big() {
   let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
-  let big   = Digits::new(base10,"12349786".to_string());
+  let big = Digits::new(base10, "12349786".to_string());
   let small = big.propagate("11913785".to_string());
-  assert_eq!(small <  big, true);
-  assert_eq!(small >  big, false);
-  assert_eq!(small <= big, true);
-  assert_eq!(small >= big, false);
+  assert!(small < big);
+  assert!(!(small > big));
+  assert!(small <= big);
+  assert!(!(small >= big));
 }
 
 #[test]
