@@ -1,0 +1,23 @@
+# Benchmarks comparing digits 1.1.1 (from crates.io) with this checkout.
+#
+# A separate package so Criterion, which needs a much newer Rust than the
+# library's 1.56 MSRV, never becomes a dependency of `digits` itself.
+#
+#   cd benchmarks && cargo bench
+#   python3 report.py > RESULTS.md
+[package]
+name = "digits-benchmarks"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dev-dependencies]
+criterion = "0.8"
+digits = { path = ".." }
+digits_v1 = { package = "digits", version = "=1.1.1" }
+
+[[bench]]
+name = "compare"
+harness = false
