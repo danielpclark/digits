@@ -1,5 +1,5 @@
 // Copyright 2017 Daniel P. Clark & other digits Developers
-// 
+//
 // Licensed under the Apache License, Version 2.0, <LICENSE-APACHE or
 // http://apache.org/licenses/LICENSE-2.0> or the MIT license <LICENSE-MIT or
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
@@ -11,9 +11,9 @@
 ]
 //! # digits
 //!
-//! The digits crate is a linked list implementation of a score card flipper.  But
-//! in this case it's with any characters you want and you can enumerate through
-//! possibilities beyond the numeric limits intrinsic in basic numerc types like `u64`.
+//! The digits crate is a score card flipper.  But in this case it's with any
+//! characters you want and you can enumerate through possibilities beyond the
+//! numeric limits intrinsic in basic numerc types like `u64`.
 //!
 //! Primary use case would be brute forcing character sequences.
 #![cfg_attr(feature="clippy", feature(plugin))]
@@ -26,22 +26,22 @@ use std::ops::{
   Add,AddAssign,Mul,MulAssign,BitXor,BitXorAssign
 };
 use std::cmp::{PartialOrd,Ordering};
+use std::sync::Arc;
 
-extern crate array_tool;
 mod internal;
-use internal::step_map::StepMap;
-use internal::carry_add::{CappedAdd,SignNum,Sign};
+use internal::arith;
 
 /// This struct acts similar to a full number with a custom numeric character base
 /// which is provided and mapped via a `BaseCustom` instance.
 ///
-/// The underlying implementation for Digits is a linked list where all the methods recurse
-/// as far as need to to implement the operations.
+/// The digits are stored in a vector, least significant first, along with a
+/// shared `BaseCustom` mapping.  Every operation works iteratively, so the size
+/// of a number is limited only by memory.
 #[derive(Clone)]
 pub struct Digits {
-  mapping: BaseCustom<char>,
-  digit: u64,
-  left: Option<Box<Digits>>,
+  mapping: Arc<BaseCustom<char>>,
+  // Least significant digit first; never empty.
+  digits: Vec<u8>,
 }
 
 impl Digits {
@@ -68,54 +68,16 @@ impl Digits {
   ///
   /// _This will panic if numeric bases are not the same._
   pub fn add(&self, other: Self) -> Self {
-    assert!(self.base() == other.base());
-    let mut result: Vec<u64> = vec![];
-
-    let mut carry: u64 = 0;
-
-    let mut c_self: Option<Box<Digits>> = Some(Box::new(self.clone()));
-    let mut o_self: Option<Box<Digits>> = Some(Box::new(other));
-    
-    let mut remainder: Option<SignNum<u64>>;
-    loop {
-      if carry == 0 && c_self == None && o_self == None { break }
-      let cs = c_self.clone();
-      let os = o_self.clone();
-      result.push(
-        {
-          let cr = carry.capped_add({
-            cs.unwrap_or_else(|| Box::new(self.zero())).digit +
-            os.unwrap_or_else(|| Box::new(self.zero())).digit},
-            (0, self.base() as u64)
-          );
-          remainder = cr.carry;
-          cr.sign_num.num
-        }
-      );
-      let guard = remainder.unwrap_or_else(|| SignNum::new(0));
-      match guard.sign {
-        Sign::Plus => {
-          carry = guard.num;
-        },
-        Sign::Minus => unimplemented!()
-      }
-      c_self = c_self.unwrap_or_else(|| Box::new(self.zero())).left;
-      o_self = o_self.unwrap_or_else(|| Box::new(self.zero())).left;
-    }
-    result.reverse();
-    self.new_mapped(&result).unwrap()
+    self.assert_same_base(&other);
+    let mut result = self.clone();
+    let radix = result.radix();
+    arith::add_assign(&mut result.digits, &other.digits, radix);
+    result
   }
 
   /// Returns a vector of each characters position mapping
   pub fn as_mapping_vec(&self) -> Vec<u64> {
-    match self.left {
-      Some(ref l) => {
-        let mut result = l.as_mapping_vec();
-        result.extend(vec![self.digit]);
-        result
-      },
-      None => vec![self.digit],
-    }
+    self.digits.iter().rev().map(|&d| u64::from(d)).collect()
   }
 
   /// Make numeric base size publicly available on Digits
@@ -140,15 +102,7 @@ impl Digits {
   /// ```
   pub fn gen<T>(&self, other: T) -> Self
   where Self: From<(BaseCustom<char>, T)> {
-    Digits::from((self.mapping.clone(), other))
-  }
-
-  // the way to recurse and process Digits
-  fn head_tail(self) -> (u64, Option<Box<Self>>) {
-    match self.left {
-      Some(bx) => (self.digit, Some(bx)),
-      None => (self.digit, None),
-    }
+    Digits::from((BaseCustom::clone(&self.mapping), other))
   }
 
   /// Returns true of false based on whether the limit of allowed adjacents is not exceeded.
@@ -156,21 +110,7 @@ impl Digits {
   ///
   /// Same as being a more efficient `self.max_adjacent <= allowed_adjacent`.
   pub fn is_valid_adjacent(&self, adjacent: usize) -> bool {
-    let mut ptr = self;
-    let mut last_num = self.digit;
-    let mut last_num_count = 0;
-    while let Some(ref item) = ptr.left {
-      if item.digit == last_num {
-        last_num_count += 1;
-      } else {
-        last_num_count = 0;
-      }
-
-      if last_num_count > adjacent { return false; }
-      last_num = item.digit;
-      ptr = item;
-    }
-    true
+    arith::runs_within(&self.digits, adjacent.saturating_add(1))
   }
 
   /// Returns whether the two Digits instances have the same numeric base and
@@ -189,39 +129,22 @@ impl Digits {
   /// assert!(two.is_compat(&three));
   /// ```
   pub fn is_compat(&self, other: &Self) -> bool {
-    self.mapping == other.mapping
-  }
-
-  // A non-consuming quick end check.
-  // More efficient than calling `is_zero` when this applies.
-  fn is_end(&self) -> bool {
-    self.digit == 0 && match self.left { None => true, _ => false }
+    Arc::ptr_eq(&self.mapping, &other.mapping) || self.mapping == other.mapping
   }
 
   /// Returns bool value of if the number is one.
   pub fn is_one(&self) -> bool {
-    if self.digit != 1 { return false }
-    match self.left {
-      None => { true },
-      Some(ref bx) => { bx.is_zero() },
-    }
+    self.significant() == [1]
   }
 
   /// Returns bool value of if the number is zero.
   pub fn is_zero(&self) -> bool {
-    if self.digit != 0 { return false }
-    match self.left {
-      None => { true },
-      Some(ref bx) => { bx.is_zero() },
-    }
+    arith::is_zero(&self.digits)
   }
 
-  /// Returns a `usize` of the total linked list length.
+  /// Returns a `usize` of the total number of digits.
   pub fn length(&self) -> usize {
-    match self.left {
-      None => 1,
-      Some(ref l) => { l.length() + 1 }
-    }
+    self.digits.len()
   }
 
   /// Give the count for the maximum of the same adjacent characters for this digit.
@@ -243,17 +166,7 @@ impl Digits {
   /// The above example demonstrates that there are 2 adjacent 7s next to a 7
   /// and that is the biggest adjacent set of numbers.
   pub fn max_adjacent(&self) -> usize {
-    self.max_adj(self.digit, 0, 1) - 1
-  }
-
-  fn max_adj(&self, last_num: u64, last_num_count: usize, max_count: usize) -> usize {
-    let mut lnc = last_num_count;
-    if self.digit == last_num { lnc += 1; } else { lnc = 1; }
-    let max_count = std::cmp::max(lnc, max_count);
-    match self.left {
-      None => max_count,
-      Some(ref l) => { l.max_adj(self.digit, lnc, max_count) },
-    }
+    arith::longest_run(&self.digits) - 1
   }
 
   /// Multiply two Digits instances together.
@@ -279,35 +192,13 @@ impl Digits {
   ///
   /// _This will panic if numeric bases are not the same._
   pub fn mul(&self, other: Self) -> Self {
-    self.multiply(other, 0)
+    self.multiply(&other)
   }
 
-  // Internal implementation for multiply. Needs the recursive
-  // value of powers of ten for addition.
-  fn multiply(&self, other: Digits, power_of_ten: usize) -> Self {
-    assert!(self.base() == other.base());
-
-    let mut position: usize = power_of_ten;
-    let mut o = Some(Box::new(other));
-    let mut result = self.zero();
-
-    while let Some(thing) = o.clone() {
-      let (dgt, tail) = thing.head_tail();
-      o = tail;
-
-      let mltply = self.propagate((self.digit * dgt).to_string()).pow_ten(position);
-
-      let current_digit = self.propagate(self.mapping.gen(dgt).to_string());
-
-      if let Some(ref bx) = self.left {
-        result.mut_add_internal(bx.clone().multiply(current_digit, position + 1), true);
-      };
-
-      result.mut_add_internal( mltply, true );
-      position += 1;
-    }
-
-    result
+  // An unpadded product.
+  fn multiply(&self, other: &Digits) -> Self {
+    self.assert_same_base(other);
+    self.with_digits(arith::mul(&self.digits, &other.digits, self.radix()))
   }
 
   /// Add two Digits instances together.
@@ -333,36 +224,18 @@ impl Digits {
   ///
   /// _This will panic if numeric bases are not the same._
   pub fn mut_add(&mut self, other: Self) -> Self {
-    self.mut_add_internal(other, false)
-  }
-  fn mut_add_internal(&mut self, other: Digits, trim: bool) -> Self {
-    assert!(self.base() == other.base());
-
-    if other.is_end() { return self.clone(); };
-    let (last, rest) = other.head_tail();
-
-    // sums current single digit
-    let added = self.propagate(self.mapping.gen(last + self.digit));
-    let (l, r) = added.head_tail();
-    self.digit = l;
-
-    // sums for left
-    let mut intermediate = Digits::new_zero(self.mapping.clone());
-    if let Some(dg) = r { intermediate.mut_add_internal(dg.replicate(), trim); }
-    if let Some(dg) = rest { intermediate.mut_add_internal(dg.replicate(), trim); }
-
-    match self.left.clone() {
-      Some(bx) => {
-        self.set_left( bx.replicate().mut_add_internal(intermediate, trim).clone(), trim );
-      },
-      None => {
-        if !intermediate.is_zero() {
-          self.set_left( intermediate, trim );
-        }
-      }
-    };
-
+    self.mut_add_internal(&other);
     self.clone()
+  }
+
+  // Keeps this number's width (zero padding), growing only on a carry.
+  fn mut_add_internal(&mut self, other: &Digits) {
+    self.assert_same_base(other);
+    let width = self.digits.len();
+    let radix = self.radix();
+    arith::add_assign(&mut self.digits, &other.digits, radix);
+    let keep = width.max(arith::significant_len(&self.digits));
+    self.digits.truncate(keep);
   }
 
   /// Multiply two Digits instances together.
@@ -388,10 +261,25 @@ impl Digits {
   ///
   /// _This will panic if numeric bases are not the same._
   pub fn mut_mul(&mut self, other: Self) -> Self {
-    let (d, r) = self.multiply(other, 0).head_tail();
-    self.digit = d;
-    if let Some(rest) = r { self.set_left(rest.replicate(), true); }
+    self.mut_mul_internal(&other);
     self.clone()
+  }
+
+  fn mut_mul_internal(&mut self, other: &Digits) {
+    self.assert_same_base(other);
+    let product = arith::mul(&self.digits, &other.digits, self.radix());
+    self.set_product(product);
+  }
+
+  // Products have no zero padding, except that a single digit product keeps
+  // the padding of a number whose other digits are all zero ("02" * 4 is "08").
+  fn set_product(&mut self, product: Vec<u8>) {
+    let width = self.digits.len();
+    let padded = product.len() == 1 && arith::is_zero(&self.digits[1..]);
+    self.digits = product;
+    if padded {
+      self.digits.resize(width, 0);
+    }
   }
 
   /// Creates a new Digits instance with the provided character set and value.
@@ -411,30 +299,24 @@ impl Digits {
   /// ```
   pub fn new<S>(mapping: BaseCustom<char>, number: S) -> Digits
   where S: Into<String> {
-    let number = number.into();
-    if number.is_empty() { return Digits { mapping: mapping, digit: 0, left: None }; };
-    let (last, rest) = {
-      let mut n = number.chars().rev();
-      (n.next().unwrap(), n.rev().collect::<String>())
-    };
+    Digits::parse(Arc::new(mapping), &number.into())
+  }
 
-    let continuation = {
-      if rest.is_empty() {
-        None
-      } else {
-        Some(Box::new(Digits::new(mapping.clone(), rest)))
+  fn parse(mapping: Arc<BaseCustom<char>>, number: &str) -> Digits {
+    let mut digits: Vec<u8> = number.chars().rev().map(|c| {
+      match mapping.position(c) {
+        // A base has at most 255 characters, so a position fits in a u8.
+        Some(position) => position as u8,
+        None => panic!("{:?} is not a character of this numeric base", c),
       }
-    };
-    Digits {
-      mapping: mapping.clone(),
-      digit: mapping.decimal(last.to_string()),
-      left: continuation,
-    }
+    }).collect();
+    if digits.is_empty() { digits.push(0); }
+    Digits { mapping: mapping, digits: digits }
   }
 
   /// Create a Digits from a Vector of from zero positional mappings for custom Digits numeric
   /// base.
-  /// 
+  ///
   /// # Example
   ///
   /// ```
@@ -457,12 +339,9 @@ impl Digits {
     if places.iter().any(|&x| x >= self.mapping.base) {
       return Err("Character mapping out of range!");
     }
-    let num = places.iter().fold("".to_string(), |mut acc, &x| {
-        acc.push(*self.mapping.nth(x as usize).unwrap());
-        acc
-      }
-    );
-    Ok(Digits::new(self.mapping.clone(), num))
+    let mut digits: Vec<u8> = places.iter().rev().map(|&x| x as u8).collect();
+    if digits.is_empty() { digits.push(0); }
+    Ok(self.with_digits(digits))
   }
 
   /// Creates a new Digits instance with value of one and the provided character mapping.
@@ -478,7 +357,7 @@ impl Digits {
   /// assert_eq!(one.to_s(), "1");
   /// ```
   pub fn new_one(mapping: BaseCustom<char>) -> Self {
-    Digits { mapping: mapping, digit: 1, left: None }
+    Digits { mapping: Arc::new(mapping), digits: vec![1] }
   }
 
   /// Creates a new Digits instance with value of zero and uses the provided character mapping.
@@ -494,14 +373,12 @@ impl Digits {
   /// assert_eq!(zero.to_s(), "0");
   /// ```
   pub fn new_zero(mapping: BaseCustom<char>) -> Self {
-    Digits { mapping: mapping, digit: 0, left: None }
+    Digits { mapping: Arc::new(mapping), digits: vec![0] }
   }
 
   /// Returns the next Digits in incrementing that only allows the given number of
   /// adjacent number duplicates.
   ///
-  /// _This will panic! if numeric base is less than 4._
-  /// 
   /// # Example
   ///
   /// ```
@@ -513,8 +390,9 @@ impl Digits {
   /// assert_eq!(num.next_non_adjacent(0).to_s(), "101");
   /// ```
   pub fn next_non_adjacent(&mut self, adjacent: usize) -> Self {
-    self.prep_non_adjacent(adjacent);
-    self.step_non_adjacent(adjacent)
+    self.increment();
+    self.raise_to_non_adjacent(adjacent);
+    self.clone()
   }
 
   /// Creates a new Digits instance with value of one and uses the current character mapping.
@@ -531,15 +409,14 @@ impl Digits {
   /// assert_eq!(one.to_s(), "1");
   /// ```
   pub fn one(&self) -> Self {
-    Digits::new_one(self.mapping.clone())
+    self.with_digits(vec![1])
   }
 
   /// The “pinky” is the smallest digit
-  /// a.k.a. current digit in the linked list
   /// a.k.a. the right most digit.
   /// This will be a `char` value for that digit.
   pub fn pinky(&self) -> char {
-    self.mapping.char(self.digit as usize).unwrap()
+    self.character(self.digits[0])
   }
 
   /// Multiplies self times the power-of given Digits parameter.
@@ -562,42 +439,26 @@ impl Digits {
   /// ```text
   /// "121"
   /// ```
-  pub fn pow(&mut self, mut pwr: Self) -> Self {
-    if pwr.is_zero() { return self.one(); }
-    let copy = self.clone();
-    loop {
-      if pwr.is_one() {
-        break
-      } else {
-        self.mut_mul(copy.clone());
-      }
-      pwr.pred_till_zero();
-    }
+  pub fn pow(&mut self, pwr: Self) -> Self {
+    self.pow_internal(&pwr);
     self.clone()
   }
 
-  // multiply self by 10ⁿ without using typical multiplication
-  fn pow_ten(&self, positions: usize) -> Self {
-    let mut result: Digits = self.clone();
-    for _ in 0..positions {
-      let original = result;
-      result = Digits::new_zero(self.mapping.clone());
-      result.set_left(original, true);
+  fn pow_internal(&mut self, pwr: &Digits) {
+    if pwr.is_zero() {
+      self.require_two_characters("hold one");
+      self.digits = vec![1];
+    } else if !pwr.is_one() {
+      let power = arith::pow(&self.digits, &pwr.digits, self.radix(), pwr.radix());
+      self.set_product(power);
     }
-    result
   }
 
   /// Minuses one unless it's zero, then it just returns a Digits instance of zero.
   pub fn pred_till_zero(&mut self) -> Self {
-    if self.is_zero() { return self.clone(); }
-    if self.digit == 0 {
-      self.digit = self.mapping.base - 1;
-      match self.left.clone() {
-        Some(ref mut bx) => self.set_left(bx.pred_till_zero(), false),
-        None => self.left = None
-      }
-    } else {
-      self.digit -= 1;
+    if !self.is_zero() {
+      let radix = self.radix();
+      arith::decrement(&mut self.digits, radix);
     }
     self.clone()
   }
@@ -605,10 +466,8 @@ impl Digits {
   /// Sometimes given starting Digits have more adjacent characters than is desired
   /// when proceeding with non-adjacent steps.  This method provides a valid initial
   /// state for `step_non_adjacent`'s algorithm to not miss any initial steps.
-  /// 
-  /// _This method is used internally for `next_non_adjacent`.
   ///
-  /// _This will panic! if numeric base is less than 4._
+  /// _This method is used internally for `next_non_adjacent`.
   ///
   /// # Example
   ///
@@ -630,55 +489,11 @@ impl Digits {
   ///
   /// For convenience you may just use `next_non_adjacent` instead of prep and step.
   pub fn prep_non_adjacent(&mut self, adjacent: usize) -> Self {
-    assert!(self.mapping.base > 3, "\n\n  WARNING!\n\n  \"You may not use non-adjacent stepping with numeric bases of less than 4!\"\n\n");
-
-    if self.is_valid_adjacent(adjacent) {
-      return self.clone();
+    if !self.is_valid_adjacent(adjacent) {
+      self.raise_to_non_adjacent(adjacent);
+      self.pred_till_zero();
     }
-
-    let mut v = self.as_mapping_vec();
-    'outer: loop {
-      let mut last_num: Option<u64> = None;
-      let mut last_num_count = 0;
-      let w = v.clone();
-      let itr = w.iter().enumerate();
-
-      for (i, item) in itr {
-        if last_num == None {
-          last_num = Some(*item);
-          continue;
-        }
-
-        if let Some(val) = last_num {
-          if item == &val {
-            last_num_count += 1;
-          } else {
-            last_num_count = 0;
-          }
-
-          if last_num_count > adjacent {
-            let i = i + 1;
-            let mut d = self.new_mapped(&v[0..i].to_vec()).ok().unwrap();
-            d.succ();
-            let mut new_v = d.as_mapping_vec();
-
-            for _ in v[i..v.len()].iter() {
-              new_v.push(0)
-            }
-
-            v = new_v;
-            continue 'outer;
-          }
-        }
-        
-        last_num = Some(*item);
-      }
-      break;
-    }
-    let result = self.new_mapped(&v).ok().unwrap().pred_till_zero();
-    self.digit = result.digit;
-    self.left = result.left.clone();
-    result
+    self.clone()
   }
 
   /// Creates a new Digits instance with the internal character set and given value.
@@ -698,7 +513,7 @@ impl Digits {
   /// ```
   pub fn propagate<S>(&self, number: S) -> Self
   where S: Into<String> {
-    Digits::new(self.mapping.clone(), number)
+    Digits::parse(Arc::clone(&self.mapping), &number.into())
   }
 
   /// Right count of digits character index.
@@ -723,37 +538,18 @@ impl Digits {
   /// 3
   /// ```
   pub fn rcount(&self, character_index: u8) -> usize {
-    if let Some(ref d) = self.left {
-      if self.digit == u64::from(character_index) {
-        return d.rcount(character_index) + 1;
-      }
-    } else if self.digit == u64::from(character_index) {
-      return 1;
-    }
-    0
+    self.digits.iter().take_while(|&&d| d == character_index).count()
   }
 
   /// An alias for `clone`. _Useful for unboxing._
   pub fn replicate(self) -> Self { self.clone() }
 
-  // logic for setting left linked list continuation
-  fn set_left(&mut self, d: Digits, trim: bool) {
-    if trim && d.is_end() {
-      self.left = None;
-    } else {
-      self.left = Some(Box::new(d));
-    }
-  }
-
   /// Returns the next Digits in incrementing that only allows the given number of
   /// adjacent number duplicates.
   ///
-  /// _This will panic! if numeric base is less than 4._
+  /// The starting value does not need to be valid for the adjacency limit
+  /// already; this gives the same result as `next_non_adjacent`.
   ///
-  /// **NOTE:** _This assumes the starting state is valid for given non adjacent characters.
-  /// If you want to ensure this please use prep_adjacent before this, or just use
-  /// `next_non_adjacent` to handle them both._
-  /// 
   /// # Example
   ///
   /// ```
@@ -765,36 +561,27 @@ impl Digits {
   /// assert_eq!(num.step_non_adjacent(0).to_s(), "101");
   /// ```
   pub fn step_non_adjacent(&mut self, adjacent: usize) -> Self {
-    let mut step_map = StepMap::new(self.zero(), adjacent as u8);
-    let mut v: Self;
-    loop {
-      let mut builder = self.clone();
-      v = builder.mut_add(step_map.next().unwrap());
-      if v.is_valid_adjacent(adjacent) {
-        break;
-      }
-    }
-    self.digit = v.digit;
-    self.left = v.left;
-    self.clone()
+    self.next_non_adjacent(adjacent)
   }
 
   /// Plus one.
   pub fn succ(&mut self) -> Self {
-    let one = self.one();
-    self.mut_add_internal(one, false)
+    self.increment();
+    self.clone()
   }
 
-  /// Gives the full value of all digits within the linked list as a String.
+  fn increment(&mut self) {
+    self.require_two_characters("count up");
+    let radix = self.radix();
+    arith::increment(&mut self.digits, radix);
+  }
+
+  /// Gives the full value of all digits as a String.
   pub fn to_s(&self) -> String {
-    let num = self.mapping.gen(self.digit);
-    match self.left {
-      None => num.to_owned(),
-      Some(ref bx) => format!("{}{}", bx.to_s(), num),
-    }
+    self.digits.iter().rev().map(|&d| self.character(d)).collect()
   }
 
-  /// Gives the full value of all digits within the linked list as a String.
+  /// Gives the full value of all digits as a String.
   pub fn to_string(&self) -> String {
     self.to_s()
   }
@@ -813,7 +600,7 @@ impl Digits {
   /// assert_eq!(zero.to_s(), "0");
   /// ```
   pub fn zero(&self) -> Self {
-    Digits::new_zero(self.mapping.clone())
+    self.with_digits(vec![0])
   }
 
   /// Zero fills the left of the current number up to a total character length.
@@ -830,24 +617,8 @@ impl Digits {
   /// assert_eq!(nine.to_s(), "0009");
   /// ```
   pub fn zero_fill(&mut self, length: usize) {
-    if self.length() >= length { return; }
-    if length == 0 { return; }
-    match self.left.clone() {
-      None => {
-        let mut l = self.zero();
-        l.zero_fill(length - 1);
-        self.left = Some(Box::new(l));
-      }
-      Some(v) => {
-        self.set_left(
-          {
-            let mut l = v.replicate();
-            l.zero_fill(length -1 );
-            l
-          },
-          false
-        )
-      }
+    if self.digits.len() < length {
+      self.digits.resize(length, 0);
     }
   }
 
@@ -865,13 +636,50 @@ impl Digits {
   /// assert_eq!(nine.to_s(), "9");
   /// ```
   pub fn zero_trim(&mut self) {
-    let mut lnum: String = "".to_string();
-    if let Some(ref v) = self.left {
-      lnum = v.to_s();
+    arith::trim(&mut self.digits);
+  }
+
+  fn assert_same_base(&self, other: &Digits) {
+    assert!(self.base() == other.base());
+  }
+
+  fn character(&self, digit: u8) -> char {
+    *self.mapping.nth(usize::from(digit)).expect("digit outside the numeric base")
+  }
+
+  // This value, without zero padding, in another mapping.
+  fn converted_to(&self, mapping: Arc<BaseCustom<char>>) -> Digits {
+    if mapping.base < 2 && !self.is_zero() {
+      panic!("a numeric base of a single character can only hold zero");
     }
-    lnum = lnum.trim_start_matches(*self.mapping.zero()).to_string();
-    let lval = self.propagate(lnum);
-    self.set_left(lval, true);
+    let digits = arith::convert(&self.digits, self.radix(), mapping.base as u32);
+    Digits { mapping: mapping, digits: digits }
+  }
+
+  fn radix(&self) -> u32 {
+    self.mapping.base as u32
+  }
+
+  fn raise_to_non_adjacent(&mut self, adjacent: usize) {
+    self.require_two_characters("step");
+    let radix = self.radix();
+    arith::raise_to_valid_runs(&mut self.digits, adjacent.saturating_add(1), radix);
+  }
+
+  // A `BaseCustom` built from repeats of one character (`['a', 'a']`) has a
+  // single unit, so it can hold zero but cannot count.
+  fn require_two_characters(&self, operation: &str) {
+    if self.mapping.base < 2 {
+      panic!("cannot {} in a numeric base of a single character, which can only hold zero", operation);
+    }
+  }
+
+  fn significant(&self) -> &[u8] {
+    &self.digits[..arith::significant_len(&self.digits)]
+  }
+
+  fn with_digits(&self, digits: Vec<u8>) -> Digits {
+    Digits { mapping: Arc::clone(&self.mapping), digits: digits }
   }
 }
 
@@ -894,27 +702,7 @@ pub trait Reverse {
 
 impl Reverse for Digits {
   fn reverse(&mut self) {
-    let mut curr_node: Option<Digits> = Some(self.clone());
-    let mut prev_node: Option<Digits> = None;
-
-    while curr_node != None {
-      let cn = curr_node.unwrap();
-      let next_node = if let Some(n) = cn.clone().left {
-        Some(n.replicate())
-      } else { None };
-      let mut c = cn;
-      if let Some(prev) = prev_node {
-        c.set_left(prev, false);
-      } else {
-        c.left = None;
-      }
-      prev_node = Some(c);
-      curr_node = next_node;
-    }
-
-    let p = prev_node.unwrap();
-    self.digit = p.digit;
-    self.left = p.left;
+    self.digits.reverse();
   }
 }
 
@@ -925,58 +713,21 @@ pub trait Into<String> {
 
 impl From<(BaseCustom<char>, u64)> for Digits {
   fn from(d: (BaseCustom<char>, u64)) -> Digits {
-    let mapping = d.0;
-    let value = d.1;
-    Digits::new(mapping.clone(), mapping.gen(value))
+    let text = d.0.gen(d.1);
+    Digits::parse(Arc::new(d.0), &text)
   }
 }
 
 impl From<(BaseCustom<char>, Digits)> for Digits {
   fn from(d: (BaseCustom<char>, Digits)) -> Digits {
-    let mapping = d.0;
-    let source = d.1;
-    let from_base = source.mapping.base;
-    let mut result = Digits::new_zero(mapping.clone());
-    let mut pointer: Option<Box<Digits>> = Some(Box::new(source.clone()));
-    let mut position = 0;
-    // Down-Casting
-    if from_base >= mapping.base {
-      while let Some(bx) = pointer {
-        let (h, t) = bx.head_tail();
-        if h != 0 { // speed optimization
-          result.mut_add_internal(
-            Digits::new(mapping.clone(), mapping.gen(h)).mul(
-              Digits::new(mapping.clone(), mapping.gen(from_base)).
-                pow(source.gen(position))
-            ),
-            true
-          );
-        }
-        position += 1;
-        pointer = t;
-      }
-    } else { // Up-Casting
-      while let Some(bx) = pointer {
-        let (h, t) = bx.head_tail();
-        if h != 0 { // speed optimization
-          result.mut_add_internal(
-            // This implementation is limited by the max of usize
-            Digits::new(mapping.clone(), mapping.gen(h * from_base.pow(position as u32))),
-            true
-          );
-        }
-        position += 1;
-        pointer = t;
-      }
-    }
-    result
+    d.1.converted_to(Arc::new(d.0))
   }
 }
 
 impl From<(Digits, Digits)> for Digits {
   fn from(d: (Digits, Digits)) -> Digits {
-    if d.0.base() == d.1.base() { return d.1; }
-    Digits::from((d.0.mapping, d.1))
+    if d.0.is_compat(&d.1) { return d.1; }
+    d.1.converted_to(d.0.mapping)
   }
 }
 
@@ -1000,14 +751,16 @@ impl Into<String> for String {
 
 impl fmt::Display for Digits {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-   write!(f, "Digits — (Character: '{}', Decimal Value: {}{})",
-     self.mapping.gen(self.digit), self.digit, {
-       match self.left {
-         None => "".to_string(),
-         Some(ref l) => format!(", With Preceeding: '{}'", l.to_s()),
-       }
-     }
-     )
+    write!(f, "Digits — (Character: '{}', Decimal Value: {}{})",
+      self.pinky(), self.digits[0], {
+        if self.digits.len() > 1 {
+          let preceding: String = self.digits[1..].iter().rev().map(|&d| self.character(d)).collect();
+          format!(", With Preceeding: '{}'", preceding)
+        } else {
+          "".to_string()
+        }
+      }
+    )
   }
 }
 
@@ -1019,9 +772,7 @@ impl fmt::Debug for Digits {
 
 impl PartialEq for Digits {
   fn eq(&self, other: &Digits) -> bool {
-    self.mapping == other.mapping &&
-      self.digit == other.digit &&
-      self.left == other.left
+    self.is_compat(other) && self.digits == other.digits
   }
 }
 
@@ -1034,20 +785,20 @@ impl Add for Digits {
 
 impl AddAssign for Digits {
   fn add_assign(&mut self, other: Self) {
-    self.mut_add(other);
+    self.mut_add_internal(&other);
   }
 }
 
 impl Mul for Digits {
   type Output = Self;
   fn mul(self, other: Self) -> Self {
-    self.multiply(other, 0)
+    self.multiply(&other)
   }
 }
 
 impl MulAssign for Digits {
   fn mul_assign(&mut self, other: Self) {
-    self.mut_mul(other);
+    self.mut_mul_internal(&other);
   }
 }
 
@@ -1060,32 +811,14 @@ impl BitXor for Digits {
 
 impl BitXorAssign for Digits {
   fn bitxor_assign(&mut self, other: Self) {
-    self.pow(other);
+    self.pow_internal(&other);
   }
 }
 
 impl PartialOrd for Digits {
   fn partial_cmp(&self, other: &Digits) -> Option<Ordering> {
-    assert!(self.mapping == other.mapping);
-    let mut result: Option<Ordering>;
-    let mut a: Self = self.clone();
-    let mut b: Self = other.clone();
-    result = a.digit.partial_cmp(&b.digit);
-    while let (Some(x),Some(y)) = (a.left.clone(), b.left.clone()) {
-      a = x.replicate();
-      b = y.replicate();
-      match a.digit.partial_cmp(&b.digit) {
-        Some(Ordering::Equal) | None => (),
-        Some(change) => { result = Some(change); },
-      }
-    }
-    if a.left.is_some() && !b.left.is_some() && !a.left.clone().unwrap().is_zero() {
-      result = Some(Ordering::Greater);
-    }
-    if !a.left.is_some() && b.left.is_some() && !b.left.unwrap().is_zero() {
-      result = Some(Ordering::Less);
-    }
-    result
+    assert!(self.is_compat(other));
+    Some(arith::cmp(&self.digits, &other.digits))
   }
 }
 

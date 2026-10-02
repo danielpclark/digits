@@ -99,9 +99,8 @@ fn it_shows_the_base_size() {
   assert_eq!(num.base(), 10);
 }
 
-#[should_panic]
 #[test]
-fn should_panic_when_base_too_low_for_non_adjacent_stepping() {
+fn non_adjacent_stepping_works_in_low_bases() {
   let base2 = BaseCustom::<char>::new("01".chars().collect());
   let mut num = Digits::new(base2, "101010".to_string());
   assert_eq!(num.next_non_adjacent(0).to_s(), "1010101".to_string());
