@@ -894,27 +894,20 @@ pub trait Reverse {
 
 impl Reverse for Digits {
   fn reverse(&mut self) {
-    let mut curr_node: Option<Digits> = Some(self.clone());
-    let mut prev_node: Option<Digits> = None;
-
-    while curr_node != None {
-      let cn = curr_node.unwrap();
-      let next_node = if let Some(n) = cn.clone().left {
-        Some(n.replicate())
-      } else { None };
-      let mut c = cn;
-      if let Some(prev) = prev_node {
-        c.set_left(prev, false);
-      } else {
-        c.left = None;
-      }
-      prev_node = Some(c);
-      curr_node = next_node;
+    // Detach the nodes above the current digit and re-link them in the opposite order,
+    // ending with a copy of the current node; then adopt the new left-most node as head.
+    let mut reversed: Option<Box<Digits>> =
+      Some(Box::new(Digits { mapping: self.mapping.clone(), digit: self.digit, left: None }));
+    let mut rest = self.left.take();
+    while let Some(mut node) = rest {
+      rest = node.left.take();
+      node.left = reversed;
+      reversed = Some(node);
     }
 
-    let p = prev_node.unwrap();
-    self.digit = p.digit;
-    self.left = p.left;
+    let mut head = reversed.unwrap();
+    self.digit = head.digit;
+    self.left = head.left.take();
   }
 }
 
