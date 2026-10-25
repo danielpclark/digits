@@ -412,24 +412,24 @@ impl Digits {
   pub fn new<S>(mapping: BaseCustom<char>, number: S) -> Digits
   where S: Into<String> {
     let number = number.into();
-    if number.is_empty() { return Digits { mapping: mapping, digit: 0, left: None }; };
-    let (last, rest) = {
-      let mut n = number.chars().rev();
-      (n.next().unwrap(), n.rev().collect::<String>())
+    // Walk the characters from the right-most (the current digit) to the left-most,
+    // appending one node per character.  This builds the same linked list as the former
+    // recursive implementation, but with constant stack depth and without keeping a copy
+    // of the remaining string alive for every digit.
+    let mut chars = number.chars().rev();
+    let mut head = match chars.next() {
+      None => return Digits { mapping: mapping, digit: 0, left: None },
+      Some(last) => Digits { mapping: mapping.clone(), digit: mapping.decimal(last.to_string()), left: None },
     };
-
-    let continuation = {
-      if rest.is_empty() {
-        None
-      } else {
-        Some(Box::new(Digits::new(mapping.clone(), rest)))
+    {
+      let mut tail = &mut head.left;
+      for c in chars {
+        let node = Digits { mapping: mapping.clone(), digit: mapping.decimal(c.to_string()), left: None };
+        *tail = Some(Box::new(node));
+        tail = &mut tail.as_mut().unwrap().left;
       }
-    };
-    Digits {
-      mapping: mapping.clone(),
-      digit: mapping.decimal(last.to_string()),
-      left: continuation,
     }
+    head
   }
 
   /// Create a Digits from a Vector of from zero positional mappings for custom Digits numeric
