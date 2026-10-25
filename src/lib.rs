@@ -247,12 +247,17 @@ impl Digits {
   }
 
   fn max_adj(&self, last_num: u64, last_num_count: usize, max_count: usize) -> usize {
+    let mut last_num = last_num;
     let mut lnc = last_num_count;
-    if self.digit == last_num { lnc += 1; } else { lnc = 1; }
-    let max_count = std::cmp::max(lnc, max_count);
-    match self.left {
-      None => max_count,
-      Some(ref l) => { l.max_adj(self.digit, lnc, max_count) },
+    let mut max_count = max_count;
+    let mut node = self;
+    loop {
+      if node.digit == last_num { lnc += 1; } else { lnc = 1; }
+      max_count = std::cmp::max(lnc, max_count);
+      match node.left {
+        None => return max_count,
+        Some(ref l) => { last_num = node.digit; node = l; },
+      }
     }
   }
 
