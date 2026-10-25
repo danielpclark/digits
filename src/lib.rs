@@ -37,7 +37,6 @@ use internal::carry_add::{CappedAdd,SignNum,Sign};
 ///
 /// The underlying implementation for Digits is a linked list where all the methods recurse
 /// as far as need to to implement the operations.
-#[derive(Clone)]
 pub struct Digits {
   mapping: BaseCustom<char>,
   digit: u64,
@@ -1014,6 +1013,24 @@ impl fmt::Display for Digits {
 impl fmt::Debug for Digits {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{} with base: {:?}", self, self.mapping)
+  }
+}
+
+impl Clone for Digits {
+  // A derived `Clone` would recurse once per node of the linked list, which overflows
+  // the stack for long numbers.  Copy the nodes one at a time instead.
+  fn clone(&self) -> Self {
+    let mut head = Digits { mapping: self.mapping.clone(), digit: self.digit, left: None };
+    {
+      let mut source = &self.left;
+      let mut tail = &mut head.left;
+      while let Some(ref node) = *source {
+        *tail = Some(Box::new(Digits { mapping: node.mapping.clone(), digit: node.digit, left: None }));
+        tail = &mut tail.as_mut().unwrap().left;
+        source = &node.left;
+      }
+    }
+    head
   }
 }
 
