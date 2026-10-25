@@ -108,14 +108,18 @@ impl Digits {
 
   /// Returns a vector of each characters position mapping
   pub fn as_mapping_vec(&self) -> Vec<u64> {
-    match self.left {
-      Some(ref l) => {
-        let mut result = l.as_mapping_vec();
-        result.extend(vec![self.digit]);
-        result
-      },
-      None => vec![self.digit],
+    // Collect from the current (right-most) digit outward, then put the left-most first.
+    let mut result = vec![];
+    let mut node = self;
+    loop {
+      result.push(node.digit);
+      match node.left {
+        Some(ref l) => node = l,
+        None => break,
+      }
     }
+    result.reverse();
+    result
   }
 
   /// Make numeric base size publicly available on Digits
