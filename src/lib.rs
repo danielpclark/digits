@@ -830,24 +830,17 @@ impl Digits {
   /// assert_eq!(nine.to_s(), "0009");
   /// ```
   pub fn zero_fill(&mut self, length: usize) {
-    if self.length() >= length { return; }
+    let current = self.length();
+    if current >= length { return; }
     if length == 0 { return; }
-    match self.left.clone() {
-      None => {
-        let mut l = self.zero();
-        l.zero_fill(length - 1);
-        self.left = Some(Box::new(l));
-      }
-      Some(v) => {
-        self.set_left(
-          {
-            let mut l = v.replicate();
-            l.zero_fill(length -1 );
-            l
-          },
-          false
-        )
-      }
+    // Walk to the left-most node and append zero nodes until the list is `length` long.
+    let mut node: &mut Digits = self;
+    while node.left.is_some() {
+      node = node.left.as_mut().unwrap();
+    }
+    for _ in current..length {
+      node.left = Some(Box::new(node.zero()));
+      node = node.left.as_mut().unwrap();
     }
   }
 
