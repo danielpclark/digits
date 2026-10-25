@@ -209,10 +209,13 @@ impl Digits {
 
   /// Returns bool value of if the number is zero.
   pub fn is_zero(&self) -> bool {
-    if self.digit != 0 { return false }
-    match self.left {
-      None => { true },
-      Some(ref bx) => { bx.is_zero() },
+    let mut node = self;
+    loop {
+      if node.digit != 0 { return false }
+      match node.left {
+        None => return true,
+        Some(ref bx) => node = bx,
+      }
     }
   }
 
