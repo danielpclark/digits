@@ -44,6 +44,17 @@ pub struct Digits {
   left: Option<Box<Digits>>,
 }
 
+impl Drop for Digits {
+  // The default drop glue would recurse once per node of the linked list, which
+  // overflows the stack for long numbers.  Unlink the nodes one at a time instead.
+  fn drop(&mut self) {
+    let mut next = self.left.take();
+    while let Some(mut node) = next {
+      next = node.left.take();
+    }
+  }
+}
+
 impl Digits {
   /// Add two Digits instances together.
   ///
@@ -99,8 +110,8 @@ impl Digits {
         },
         Sign::Minus => unimplemented!()
       }
-      c_self = c_self.unwrap_or_else(|| Box::new(self.zero())).left;
-      o_self = o_self.unwrap_or_else(|| Box::new(self.zero())).left;
+      c_self = c_self.unwrap_or_else(|| Box::new(self.zero())).left.take();
+      o_self = o_self.unwrap_or_else(|| Box::new(self.zero())).left.take();
     }
     result.reverse();
     self.new_mapped(&result).unwrap()
@@ -144,11 +155,9 @@ impl Digits {
   }
 
   // the way to recurse and process Digits
-  fn head_tail(self) -> (u64, Option<Box<Self>>) {
-    match self.left {
-      Some(bx) => (self.digit, Some(bx)),
-      None => (self.digit, None),
-    }
+  fn head_tail(mut self) -> (u64, Option<Box<Self>>) {
+    let left = self.left.take();
+    (self.digit, left)
   }
 
   /// Returns true of false based on whether the limit of allowed adjacents is not exceeded.
@@ -775,7 +784,7 @@ impl Digits {
       }
     }
     self.digit = v.digit;
-    self.left = v.left;
+    self.left = v.left.take();
     self.clone()
   }
 
@@ -899,7 +908,7 @@ impl Reverse for Digits {
 
     while curr_node != None {
       let cn = curr_node.unwrap();
-      let next_node = if let Some(n) = cn.clone().left {
+      let next_node = if let Some(n) = cn.left.clone() {
         Some(n.replicate())
       } else { None };
       let mut c = cn;
@@ -912,9 +921,9 @@ impl Reverse for Digits {
       curr_node = next_node;
     }
 
-    let p = prev_node.unwrap();
+    let mut p = prev_node.unwrap();
     self.digit = p.digit;
-    self.left = p.left;
+    self.left = p.left.take();
   }
 }
 
@@ -976,7 +985,7 @@ impl From<(BaseCustom<char>, Digits)> for Digits {
 impl From<(Digits, Digits)> for Digits {
   fn from(d: (Digits, Digits)) -> Digits {
     if d.0.base() == d.1.base() { return d.1; }
-    Digits::from((d.0.mapping, d.1))
+    Digits::from((d.0.mapping.clone(), d.1))
   }
 }
 
@@ -1082,7 +1091,7 @@ impl PartialOrd for Digits {
     if a.left.is_some() && !b.left.is_some() && !a.left.clone().unwrap().is_zero() {
       result = Some(Ordering::Greater);
     }
-    if !a.left.is_some() && b.left.is_some() && !b.left.unwrap().is_zero() {
+    if !a.left.is_some() && b.left.is_some() && !b.left.as_ref().unwrap().is_zero() {
       result = Some(Ordering::Less);
     }
     result
