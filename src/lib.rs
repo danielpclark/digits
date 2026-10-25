@@ -1068,21 +1068,21 @@ impl PartialOrd for Digits {
   fn partial_cmp(&self, other: &Digits) -> Option<Ordering> {
     assert!(self.mapping == other.mapping);
     let mut result: Option<Ordering>;
-    let mut a: Self = self.clone();
-    let mut b: Self = other.clone();
+    let mut a: &Digits = self;
+    let mut b: &Digits = other;
     result = a.digit.partial_cmp(&b.digit);
-    while let (Some(x),Some(y)) = (a.left.clone(), b.left.clone()) {
-      a = x.replicate();
-      b = y.replicate();
+    while let (&Some(ref x), &Some(ref y)) = (&a.left, &b.left) {
+      a = &**x;
+      b = &**y;
       match a.digit.partial_cmp(&b.digit) {
         Some(Ordering::Equal) | None => (),
         Some(change) => { result = Some(change); },
       }
     }
-    if a.left.is_some() && !b.left.is_some() && !a.left.clone().unwrap().is_zero() {
+    if a.left.is_some() && !b.left.is_some() && !a.left.as_ref().unwrap().is_zero() {
       result = Some(Ordering::Greater);
     }
-    if !a.left.is_some() && b.left.is_some() && !b.left.unwrap().is_zero() {
+    if !a.left.is_some() && b.left.is_some() && !b.left.as_ref().unwrap().is_zero() {
       result = Some(Ordering::Less);
     }
     result
