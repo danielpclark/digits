@@ -590,14 +590,17 @@ impl Digits {
   /// Minuses one unless it's zero, then it just returns a Digits instance of zero.
   pub fn pred_till_zero(&mut self) -> Self {
     if self.is_zero() { return self.clone(); }
-    if self.digit == 0 {
-      self.digit = self.mapping.base - 1;
-      match self.left.clone() {
-        Some(ref mut bx) => self.set_left(bx.pred_till_zero(), false),
-        None => self.left = None
+    let base = self.mapping.base;
+    let mut node: &mut Digits = self;
+    loop {
+      if node.digit == 0 {
+        node.digit = base - 1;
+        // `self` is not zero, so a zero digit always has a non-zero remainder to borrow from.
+        node = node.left.as_mut().unwrap();
+      } else {
+        node.digit -= 1;
+        break;
       }
-    } else {
-      self.digit -= 1;
     }
     self.clone()
   }
