@@ -218,10 +218,13 @@ impl Digits {
 
   /// Returns a `usize` of the total linked list length.
   pub fn length(&self) -> usize {
-    match self.left {
-      None => 1,
-      Some(ref l) => { l.length() + 1 }
+    let mut count = 1;
+    let mut node = self;
+    while let Some(ref l) = node.left {
+      count += 1;
+      node = l;
     }
+    count
   }
 
   /// Give the count for the maximum of the same adjacent characters for this digit.
