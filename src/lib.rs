@@ -295,7 +295,7 @@ impl Digits {
       let (dgt, tail) = thing.head_tail();
       o = tail;
 
-      let mltply = self.propagate((self.digit * dgt).to_string()).pow_ten(position);
+      let mltply = self.propagate(self.mapping.gen(self.digit * dgt)).pow_ten(position);
 
       let current_digit = self.propagate(self.mapping.gen(dgt).to_string());
 
