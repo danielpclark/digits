@@ -339,30 +339,84 @@ impl Digits {
     assert!(self.base() == other.base());
 
     if other.is_end() { return self.clone(); };
-    let (last, rest) = other.head_tail();
 
-    // sums current single digit
-    let added = self.propagate(self.mapping.gen(last + self.digit));
-    let (l, r) = added.head_tail();
-    self.digit = l;
-
-    // sums for left
-    let mut intermediate = Digits::new_zero(self.mapping.clone());
-    if let Some(dg) = r { intermediate.mut_add_internal(dg.replicate(), trim); }
-    if let Some(dg) = rest { intermediate.mut_add_internal(dg.replicate(), trim); }
-
-    match self.left.clone() {
-      Some(bx) => {
-        self.set_left( bx.replicate().mut_add_internal(intermediate, trim).clone(), trim );
-      },
-      None => {
-        if !intermediate.is_zero() {
-          self.set_left( intermediate, trim );
+    // The digits of `other`, right-most first, and the index of its most significant
+    // non-zero digit (`None` when every digit is zero).
+    let mut other_digits: Vec<u64> = vec![];
+    {
+      let mut node = &other;
+      loop {
+        other_digits.push(node.digit);
+        match node.left {
+          Some(ref l) => node = l,
+          None => break,
         }
       }
-    };
+    }
+    let highest_nonzero = other_digits.iter().rposition(|&d| d != 0);
+    let base = self.mapping.base;
+
+    // Walk our own list once.  At each node the amount still to be added is `carry` plus
+    // the digits of `other` from `idx` onward; this is the value the former recursive
+    // implementation materialised as its `intermediate` at every level.
+    let mut carry: u64 = 0;
+    let mut idx: usize = 0;
+    let mut node: &mut Digits = self;
+    loop {
+      let incoming = carry + other_digits.get(idx).cloned().unwrap_or(0);
+      let sum = node.digit + incoming % base;
+      node.digit = sum % base;
+      carry = incoming / base + sum / base;
+      idx += 1;
+
+      let rest_is_zero = highest_nonzero.map_or(true, |h| idx > h);
+      let nothing_left = carry == 0 && rest_is_zero;
+
+      if node.left.is_none() {
+        if !nothing_left {
+          let rest = if idx < other_digits.len() { &other_digits[idx..] } else { &[][..] };
+          node.left = Some(Box::new(Digits::from_place_values(&node.mapping, carry, rest)));
+        }
+        break;
+      }
+      if nothing_left {
+        // Nothing more to add; the remainder of the list is untouched apart from the
+        // trimming of a lone zero node that `set_left` used to apply.
+        if trim && node.left.as_ref().unwrap().is_end() { node.left = None; }
+        break;
+      }
+      node = node.left.as_mut().unwrap();
+    }
 
     self.clone()
+  }
+
+  // Builds `carry + value(places)` (places right-most first) as a list with no leading
+  // zero nodes, which is the shape the sums of partial additions always had.
+  fn from_place_values(mapping: &BaseCustom<char>, carry: u64, places: &[u64]) -> Digits {
+    let base = mapping.base;
+    let mut digits: Vec<u64> = Vec::with_capacity(places.len() + 1);
+    let mut carry = carry;
+    for &d in places {
+      let sum = carry + d;
+      digits.push(sum % base);
+      carry = sum / base;
+    }
+    while carry > 0 {
+      digits.push(carry % base);
+      carry /= base;
+    }
+    while digits.len() > 1 && *digits.last().unwrap() == 0 { digits.pop(); }
+
+    let mut head = Digits { mapping: mapping.clone(), digit: digits[0], left: None };
+    {
+      let mut tail = &mut head.left;
+      for &d in &digits[1..] {
+        *tail = Some(Box::new(Digits { mapping: mapping.clone(), digit: d, left: None }));
+        tail = &mut tail.as_mut().unwrap().left;
+      }
+    }
+    head
   }
 
   /// Multiply two Digits instances together.
