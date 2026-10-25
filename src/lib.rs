@@ -787,11 +787,17 @@ impl Digits {
 
   /// Gives the full value of all digits within the linked list as a String.
   pub fn to_s(&self) -> String {
-    let num = self.mapping.gen(self.digit);
-    match self.left {
-      None => num.to_owned(),
-      Some(ref bx) => format!("{}{}", bx.to_s(), num),
+    // Collect from the current (right-most) digit outward, then emit left-most first.
+    let mut parts: Vec<String> = vec![];
+    let mut node = self;
+    loop {
+      parts.push(node.mapping.gen(node.digit));
+      match node.left {
+        Some(ref bx) => node = bx,
+        None => break,
+      }
     }
+    parts.iter().rev().map(|s| s.as_str()).collect::<String>()
   }
 
   /// Gives the full value of all digits within the linked list as a String.
