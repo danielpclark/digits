@@ -73,19 +73,17 @@ impl Digits {
 
     let mut carry: u64 = 0;
 
-    let mut c_self: Option<Box<Digits>> = Some(Box::new(self.clone()));
-    let mut o_self: Option<Box<Digits>> = Some(Box::new(other));
-    
+    // Walk both lists by reference; a list that has run out contributes zero.
+    let mut c_self: Option<&Digits> = Some(self);
+    let mut o_self: Option<&Digits> = Some(&other);
+
     let mut remainder: Option<SignNum<u64>>;
     loop {
-      if carry == 0 && c_self == None && o_self == None { break }
-      let cs = c_self.clone();
-      let os = o_self.clone();
+      if carry == 0 && c_self.is_none() && o_self.is_none() { break }
       result.push(
         {
-          let cr = carry.capped_add({
-            cs.unwrap_or_else(|| Box::new(self.zero())).digit +
-            os.unwrap_or_else(|| Box::new(self.zero())).digit},
+          let cr = carry.capped_add(
+            c_self.map_or(0, |d| d.digit) + o_self.map_or(0, |d| d.digit),
             (0, self.base() as u64)
           );
           remainder = cr.carry;
@@ -99,8 +97,8 @@ impl Digits {
         },
         Sign::Minus => unimplemented!()
       }
-      c_self = c_self.unwrap_or_else(|| Box::new(self.zero())).left;
-      o_self = o_self.unwrap_or_else(|| Box::new(self.zero())).left;
+      c_self = c_self.and_then(|d| d.left.as_ref().map(|l| &**l));
+      o_self = o_self.and_then(|d| d.left.as_ref().map(|l| &**l));
     }
     result.reverse();
     self.new_mapped(&result).unwrap()
