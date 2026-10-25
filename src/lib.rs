@@ -723,14 +723,17 @@ impl Digits {
   /// 3
   /// ```
   pub fn rcount(&self, character_index: u8) -> usize {
-    if let Some(ref d) = self.left {
-      if self.digit == u64::from(character_index) {
-        return d.rcount(character_index) + 1;
+    let target = u64::from(character_index);
+    let mut count = 0;
+    let mut node = self;
+    loop {
+      if node.digit != target { return count; }
+      count += 1;
+      match node.left {
+        Some(ref d) => node = d,
+        None => return count,
       }
-    } else if self.digit == u64::from(character_index) {
-      return 1;
     }
-    0
   }
 
   /// An alias for `clone`. _Useful for unboxing._
