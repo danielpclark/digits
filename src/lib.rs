@@ -1019,9 +1019,16 @@ impl fmt::Debug for Digits {
 
 impl PartialEq for Digits {
   fn eq(&self, other: &Digits) -> bool {
-    self.mapping == other.mapping &&
-      self.digit == other.digit &&
-      self.left == other.left
+    // Compare node by node; the lists are equal when every node matches and both end together.
+    let (mut a, mut b) = (self, other);
+    loop {
+      if a.mapping != b.mapping || a.digit != b.digit { return false; }
+      match (&a.left, &b.left) {
+        (&Some(ref x), &Some(ref y)) => { a = x; b = y; },
+        (&None, &None) => return true,
+        _ => return false,
+      }
+    }
   }
 }
 
