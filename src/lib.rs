@@ -412,6 +412,44 @@ impl Digits {
   pub fn new<S>(mapping: BaseCustom<char>, number: S) -> Digits
   where S: Into<String> {
     let number = number.into();
+    if let Some(c) = Digits::unknown_character(&mapping, &number) {
+      let units: String = (0..mapping.base as usize).filter_map(|i| mapping.nth(i)).collect();
+      panic!("Character {:?} is not part of the numeric base {:?}", c, units);
+    }
+    Digits::new_unchecked(mapping, number)
+  }
+
+  /// Non-panicking form of `new`.
+  ///
+  /// Returns an `Err(&'static str)` if the string contains a character that is not part of the
+  /// provided `BaseCustom` character mapping, otherwise the same `Digits` that `new` creates.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use digits::prelude::*;
+  ///
+  /// let base10 = BaseCustom::<char>::new("0123456789".chars().collect());
+  ///
+  /// assert_eq!(Digits::try_new(base10.clone(), "42".to_string()).unwrap().to_s(), "42");
+  /// assert!(Digits::try_new(base10, "4a".to_string()).is_err());
+  /// ```
+  pub fn try_new<S>(mapping: BaseCustom<char>, number: S) -> Result<Digits, &'static str>
+  where S: Into<String> {
+    let number = number.into();
+    if Digits::unknown_character(&mapping, &number).is_some() {
+      return Err("Character not in numeric base mapping!");
+    }
+    Ok(Digits::new_unchecked(mapping, number))
+  }
+
+  // First character of `number` that the mapping does not contain, if any.
+  fn unknown_character(mapping: &BaseCustom<char>, number: &str) -> Option<char> {
+    number.chars().find(|c| !(0..mapping.base as usize).any(|i| mapping.nth(i) == Some(c)))
+  }
+
+  // Builds the linked list; every character must already be known to be in the mapping.
+  fn new_unchecked(mapping: BaseCustom<char>, number: String) -> Digits {
     if number.is_empty() { return Digits { mapping: mapping, digit: 0, left: None }; };
     let (last, rest) = {
       let mut n = number.chars().rev();
@@ -422,7 +460,7 @@ impl Digits {
       if rest.is_empty() {
         None
       } else {
-        Some(Box::new(Digits::new(mapping.clone(), rest)))
+        Some(Box::new(Digits::new_unchecked(mapping.clone(), rest)))
       }
     };
     Digits {
