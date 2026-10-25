@@ -956,17 +956,37 @@ impl From<(BaseCustom<char>, Digits)> for Digits {
         pointer = t;
       }
     } else { // Up-Casting
+      // `from_base` to the power of `position`, expressed in the target base.  Only built
+      // once the native `u64` fast path below would overflow; from then on it is kept
+      // up to date by repeated addition so it stays correct for any target base.
+      let mut place: Option<Digits> = None;
       while let Some(bx) = pointer {
         let (h, t) = bx.head_tail();
         if h != 0 { // speed optimization
-          result.mut_add_internal(
-            // This implementation is limited by the max of usize
-            Digits::new(mapping.clone(), mapping.gen(h * from_base.pow(position as u32))),
-            true
-          );
+          match from_base.checked_pow(position as u32).and_then(|p| h.checked_mul(p)) {
+            Some(value) => {
+              result.mut_add_internal(Digits::new(mapping.clone(), mapping.gen(value)), true);
+            },
+            None => {
+              let p = place.take().unwrap_or_else(|| {
+                let mut acc = Digits::new_one(mapping.clone());
+                for _ in 0..position {
+                  let step = acc.clone();
+                  for _ in 1..from_base { acc.mut_add_internal(step.clone(), true); }
+                }
+                acc
+              });
+              for _ in 0..h { result.mut_add_internal(p.clone(), true); }
+              place = Some(p);
+            },
+          }
         }
         position += 1;
         pointer = t;
+        if let Some(ref mut p) = place {
+          let step = p.clone();
+          for _ in 1..from_base { p.mut_add_internal(step.clone(), true); }
+        }
       }
     }
     result
